@@ -291,7 +291,7 @@ export function CvOptimizer() {
                       <FormItem><FormLabel>Perfil de LinkedIn</FormLabel><FormControl><Input placeholder="https://linkedin.com/in/..." {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                   <FormField control={form.control} name="sitio_web" render={({ field }) => (
-                      <FormItem><FormLabel>Sitio Web / Portfolio</FormLabel><FormControl><Input placeholder="https://ejemplo.com" {...field} /></FormControl><FormMessage /></FormItem>
+                      <FormItem><FormLabel>Sitio Web / Portfolio (Opcional)</FormLabel><FormControl><Input placeholder="https://ejemplo.com" {...field} /></FormControl><FormMessage /></FormItem>
                   )} />
                 </div>
                 </CardContent></Card>
@@ -444,3 +444,5 @@ export function CvOptimizer() {
     </div>
   );
 }
+
+    
