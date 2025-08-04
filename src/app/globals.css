@@ -86,7 +86,8 @@
 
 @layer components {
   .cv-preview-container {
-      @apply bg-white p-6 sm:p-8 md:p-12 shadow-lg rounded-lg;
+      @apply bg-white p-12 shadow-lg;
+      color: #000;
       width: 210mm;
       min-height: 297mm;
       font-family: var(--font-pt-sans);
@@ -99,7 +100,8 @@
   }
   .cv-preview-section p,
   .cv-preview-section ul {
-      @apply text-sm text-gray-700 leading-relaxed;
+      @apply text-sm leading-relaxed;
+      color: #374151; /* gray-700 */
   }
   .cv-preview-section ul {
       @apply list-disc list-inside;
@@ -107,26 +109,31 @@
 
   /* Minimalist Style */
   .cv-minimalist .cv-preview-section h2 {
-      @apply border-b-2 border-gray-300 text-gray-800;
+      border-bottom: 2px solid #D1D5DB; /* gray-300 */
+      color: #1F2937; /* gray-800 */
   }
 
   /* Modern Style */
   .cv-modern .cv-preview-section h2 {
-      @apply border-b-2 border-primary text-primary;
+      border-bottom: 2px solid hsl(var(--primary));
+      color: hsl(var(--primary));
   }
   .cv-modern .cv-preview-section {
-      @apply border-l-4 border-accent pl-4;
+      border-left: 4px solid hsl(var(--accent));
+      padding-left: 1rem;
   }
   .cv-modern .cv-preview-section:first-child {
-      @apply border-l-0 pl-0;
+      border-left: 0;
+      padding-left: 0;
   }
-
 
   /* Classic Style */
   .cv-classic {
       font-family: var(--font-playfair-display);
   }
   .cv-classic .cv-preview-section h2 {
-      @apply text-center tracking-widest uppercase border-double border-4 border-gray-500 p-2 text-gray-700;
+      @apply text-center tracking-widest uppercase p-2;
+      border: 4px double #6B7280; /* gray-500 */
+      color: #374151; /* gray-700 */
   }
 }

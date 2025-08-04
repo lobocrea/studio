@@ -147,7 +147,7 @@ export function CvOptimizer() {
     if (!cvPreviewRef.current) return;
     setIsDownloading(true);
     try {
-        const canvas = await html2canvas(cvPreviewRef.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const canvas = await html2canvas(cvPreviewRef.current, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
         const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -189,27 +189,34 @@ export function CvOptimizer() {
     
     text.split('\n').forEach(line => {
       const trimmedLine = line.trim();
-      const header = sectionHeaders.find(h => trimmedLine.toLowerCase() === h.toLowerCase());
+      if (!trimmedLine) return;
+  
+      const header = sectionHeaders.find(h => trimmedLine.toLowerCase().replace(/:$/, '') === h.toLowerCase());
+  
       if (header) {
         currentSection = header;
         if (!sections[currentSection]) {
           sections[currentSection] = [];
         }
-      } else if (currentSection && trimmedLine) {
+      } else if (currentSection) {
         sections[currentSection].push(trimmedLine);
       }
     });
-
+  
     return Object.entries(sections).map(([title, content]) => {
       const Icon = iconMap[title] || FileText;
+      // Filter out empty lines from content
+      const filteredContent = content.filter(item => item.trim() !== '');
+      if (filteredContent.length === 0) return null;
+  
       return (
         <div key={title} className="cv-preview-section">
           <h2 className="flex items-center gap-2">
             <Icon className="h-5 w-5" />
             <span>{title}</span>
           </h2>
-          {content.map((item, index) => (
-            <p key={index}>{item}</p>
+          {filteredContent.map((item, index) => (
+            <p key={index} className="break-words">{item}</p>
           ))}
         </div>
       );
