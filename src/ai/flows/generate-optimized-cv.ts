@@ -13,6 +13,13 @@ import {z} from 'genkit';
 
 const GenerateOptimizedCvInputSchema = z.object({
   extractedData: z.string().describe('The extracted CV data in JSON format.'),
+  contactData: z.object({
+    email: z.string().optional(),
+    telefono: z.string().optional(),
+    ubicacion: z.string().optional(),
+    linkedin: z.string().optional(),
+    sitio_web: z.string().optional(),
+  }).describe('The contact information.'),
   style: z.enum(['Minimalist', 'Modern', 'Classic']).describe('The chosen CV style.'),
 });
 export type GenerateOptimizedCvInput = z.infer<typeof GenerateOptimizedCvInputSchema>;
@@ -57,22 +64,23 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateOptimizedCvOutputSchema},
   prompt: `You are an AI expert in creating optimized CVs for the Spanish job market.
 
-  Based on the extracted data and the chosen style, generate a new CV.
+  Based on the extracted data, contact information, and the chosen style, generate a new CV.
   The CV should be optimized for the Spanish job market.
 
   Extracted Data: {{{extractedData}}}
+  Contact Data: {{{jsonStringify contactData}}}
   Style: {{{style}}}
 
   - From the professional summary, extract a short, professional title.
   - For work experience, structure each entry with position, company, dates, and a description of achievements.
   - For academic background, structure each entry with degree, institution, and dates.
-  - Extract contact information like email, phone, location, and linkedin/website if available.
+  - Use the provided contact information (email, phone, location, linkedin, website).
   - Make sure the generated CV is well-structured, easy to read, and highlights the candidate's strengths.
   - Focus on accomplishments and quantify them whenever possible.
   - Use action verbs and tailor the content to the Spanish job market standards.
   - Avoid using first-person pronouns.
   - Write it in Spanish.
-  - Return a JSON object with the specified output schema.
+  - Return a JSON object with the specified output schema. The 'contacto' field in the output must be populated with the provided contact data.
   `,
 });
 
@@ -84,6 +92,13 @@ const generateOptimizedCvFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    // Ensure contact info is passed through, sometimes the LLM might forget it.
+    const finalOutput = output!;
+    finalOutput.contacto.email = input.contactData.email || finalOutput.contacto.email || '';
+    finalOutput.contacto.telefono = input.contactData.telefono || finalOutput.contacto.telefono || '';
+    finalOutput.contacto.ubicacion = input.contactData.ubicacion || finalOutput.contacto.ubicacion || '';
+    finalOutput.contacto.linkedin = input.contactData.linkedin || finalOutput.contacto.linkedin;
+    finalOutput.contacto.sitio_web = input.contactData.sitio_web || finalOutput.contacto.sitio_web;
+    return finalOutput;
   }
 );

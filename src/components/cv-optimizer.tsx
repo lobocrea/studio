@@ -1,11 +1,11 @@
 'use client';
 
-import { extractCvData, type ExtractCvDataOutput } from '@/ai/flows/extract-cv-data';
+import { extractCvData } from '@/ai/flows/extract-cv-data';
 import { generateOptimizedCv, type GenerateOptimizedCvOutput } from '@/ai/flows/generate-optimized-cv';
 import { zodResolver } from '@hookform/resolvers/zod';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { Award, Briefcase, Download, FileText, GraduationCap, Languages, Loader2, Mail, MapPin, Phone, UploadCloud, User, Wand2, Wrench, X, Globe, Linkedin, FileImage } from 'lucide-react';
+import { Download, FileImage, FileText, Globe, Linkedin, Loader2, Mail, MapPin, Phone, UploadCloud, Wand2, X } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -17,7 +17,6 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { cn } from '@/lib/utils';
 import { LoadingState } from './loading-state';
 
 type Step = 'upload' | 'extracting' | 'preview' | 'generating' | 'result';
@@ -34,11 +33,11 @@ const formSchema = z.object({
   habilidades_blandas: z.string(),
   idiomas: z.string(),
   certificaciones: z.string(),
-  email: z.string().email().optional(),
-  telefono: z.string().optional(),
-  ubicacion: z.string().optional(),
-  linkedin: z.string().url().optional(),
-  sitio_web: z.string().url().optional(),
+  email: z.string().email('Introduce un email válido.'),
+  telefono: z.string().min(1, 'El teléfono es requerido.'),
+  ubicacion: z.string().min(1, 'La ubicación es requerida.'),
+  linkedin: z.string().url('Introduce una URL válida.').optional().or(z.literal('')),
+  sitio_web: z.string().url('Introduce una URL válida.').optional().or(z.literal('')),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -93,12 +92,12 @@ export function CvOptimizer() {
           fullName: '',
           style: 'Modern',
           resumen_profesional: result.resumen_profesional,
-          experiencia_laboral: result.experiencia_laboral.join('\n'),
+          experiencia_laboral: result.experiencia_laboral.join('\n\n'),
           formacion_academica: result.formacion_academica.join('\n'),
-          habilidades_tecnicas: result.habilidades.tecnicas.join('\n'),
-          habilidades_blandas: result.habilidades.blandas.join('\n'),
-          idiomas: result.idiomas.join('\n'),
-          certificaciones: result.certificaciones.join('\n'),
+          habilidades_tecnicas: result.habilidades.tecnicas.join(', '),
+          habilidades_blandas: result.habilidades.blandas.join(', '),
+          idiomas: result.idiomas.join(', '),
+          certificaciones: result.certificaciones.join(', '),
         });
         setStep('preview');
       } catch (e) {
@@ -133,25 +132,30 @@ export function CvOptimizer() {
     
     const extractedData = {
         resumen_profesional: values.resumen_profesional,
-        experiencia_laboral: values.experiencia_laboral.split('\n').filter(Boolean),
+        experiencia_laboral: values.experiencia_laboral.split('\n\n').filter(Boolean),
         formacion_academica: values.formacion_academica.split('\n').filter(Boolean),
         habilidades: {
-            tecnicas: values.habilidades_tecnicas.split('\n').filter(Boolean),
-            blandas: values.habilidades_blandas.split('\n').filter(Boolean),
+            tecnicas: values.habilidades_tecnicas.split(',').map(s => s.trim()).filter(Boolean),
+            blandas: values.habilidades_blandas.split(',').map(s => s.trim()).filter(Boolean),
         },
-        idiomas: values.idiomas.split('\n').filter(Boolean),
-        certificaciones: values.certificaciones.split('\n').filter(Boolean),
-        contacto: {
-          email: values.email,
-          telefono: values.telefono,
-          ubicacion: values.ubicacion,
-          linkedin: values.linkedin,
-          sitio_web: values.sitio_web,
-        }
+        idiomas: values.idiomas.split(',').map(s => s.trim()).filter(Boolean),
+        certificaciones: values.certificaciones.split(',').map(s => s.trim()).filter(Boolean),
     };
 
+    const contactData = {
+      email: values.email,
+      telefono: values.telefono,
+      ubicacion: values.ubicacion,
+      linkedin: values.linkedin,
+      sitio_web: values.sitio_web,
+    }
+
     try {
-        const result = await generateOptimizedCv({ extractedData: JSON.stringify(extractedData), style: values.style });
+        const result = await generateOptimizedCv({ 
+          extractedData: JSON.stringify(extractedData),
+          contactData: contactData,
+          style: values.style 
+        });
         setOptimizedCv(result);
         setStep('result');
     } catch(e) {
@@ -165,28 +169,29 @@ export function CvOptimizer() {
     if (!cvPreviewRef.current) return;
     setIsDownloading(true);
     try {
+        // Temporarily change background for capture
+        cvPreviewRef.current.style.backgroundColor = 'white';
+
         const canvas = await html2canvas(cvPreviewRef.current, { 
-            scale: 2, 
+            scale: 3, 
             useCORS: true, 
-            backgroundColor: '#ffffff',
+            backgroundColor: null, // Use transparent background for canvas
             logging: true,
-            onclone: (document) => {
-              // On clone, we can modify the cloned document before rendering
-              // This is useful if some styles are not being applied correctly
-            }
         });
+
+        // Restore original background
+        cvPreviewRef.current.style.backgroundColor = '';
+
         const imgData = canvas.toDataURL('image/png', 1.0);
-        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdf = new jsPDF('p', 'mm', 'a4', true);
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
-        const ratio = Math.min(pdfWidth / canvasWidth, pdfHeight / canvasHeight);
+        const ratio = canvasWidth / pdfWidth;
+        const finalHeight = canvasHeight / ratio;
 
-        const imgWidth = canvasWidth * ratio;
-        const imgHeight = canvasHeight * ratio;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, finalHeight, undefined, 'FAST');
         pdf.save(`${fileName || 'cv-optimizado'}.pdf`);
     } catch (e) {
         console.error("Error generating PDF:", e);
@@ -242,11 +247,13 @@ export function CvOptimizer() {
         <Card>
           <CardHeader>
             <CardTitle className="font-headline text-2xl">Revisa y Edita tu Información</CardTitle>
-            <CardDescription>Ajusta los datos extraídos por la IA, sube una foto y elige un estilo para tu nuevo CV.</CardDescription>
+            <CardDescription>Ajusta los datos extraídos, completa tu contacto, sube una foto y elige un estilo para tu nuevo CV.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleGenerateSubmit)} className="space-y-8">
+                
+                <Card><CardHeader><CardTitle>Información Personal</CardTitle></CardHeader><CardContent className="pt-6">
                 <div className="grid md:grid-cols-2 gap-8 items-start">
                   <FormField control={form.control} name="fullName" render={({ field }) => (
                       <FormItem>
@@ -257,7 +264,7 @@ export function CvOptimizer() {
                   )} />
                   <FormField control={form.control} name="profilePic" render={({ field }) => (
                       <FormItem>
-                          <FormLabel>Foto de Perfil</FormLabel>
+                          <FormLabel>Foto de Perfil (Opcional)</FormLabel>
                           <FormControl>
                             <div className="flex items-center gap-4">
                               <Button type="button" variant="outline" onClick={() => profilePicInputRef.current?.click()}>
@@ -271,8 +278,25 @@ export function CvOptimizer() {
                           <FormMessage />
                       </FormItem>
                   )} />
+                  <FormField control={form.control} name="email" render={({ field }) => (
+                      <FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="ejemplo@email.com" {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={form.control} name="telefono" render={({ field }) => (
+                      <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input placeholder="+34 600 000 000" {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                   <FormField control={form.control} name="ubicacion" render={({ field }) => (
+                      <FormItem><FormLabel>Ubicación</FormLabel><FormControl><Input placeholder="Madrid, España" {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={form.control} name="linkedin" render={({ field }) => (
+                      <FormItem><FormLabel>Perfil de LinkedIn</FormLabel><FormControl><Input placeholder="https://linkedin.com/in/..." {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
+                  <FormField control={form.control} name="sitio_web" render={({ field }) => (
+                      <FormItem><FormLabel>Sitio Web / Portfolio</FormLabel><FormControl><Input placeholder="https://ejemplo.com" {...field} /></FormControl><FormMessage /></FormItem>
+                  )} />
                 </div>
+                </CardContent></Card>
 
+                <Card><CardHeader><CardTitle>Contenido del CV</CardTitle></CardHeader><CardContent className="pt-6 space-y-8">
                 <FormField control={form.control} name="style" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Estilo del CV</FormLabel>
@@ -292,25 +316,26 @@ export function CvOptimizer() {
                     <FormItem><FormLabel>Resumen Profesional</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="experiencia_laboral" render={({ field }) => (
-                    <FormItem><FormLabel>Experiencia Laboral</FormLabel><FormControl><Textarea rows={8} {...field} /></FormControl><FormDescription>Cada puesto en una línea nueva.</FormDescription><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Experiencia Laboral</FormLabel><FormControl><Textarea rows={8} {...field} /></FormControl><FormDescription>Separa cada puesto con una línea en blanco.</FormDescription><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="formacion_academica" render={({ field }) => (
                     <FormItem><FormLabel>Formación Académica</FormLabel><FormControl><Textarea rows={4} {...field} /></FormControl><FormDescription>Cada título en una línea nueva.</FormDescription><FormMessage /></FormItem>
                 )} />
                 <div className="grid md:grid-cols-2 gap-8">
                     <FormField control={form.control} name="habilidades_tecnicas" render={({ field }) => (
-                        <FormItem><FormLabel>Habilidades Técnicas</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormDescription>Cada habilidad en una línea nueva.</FormDescription><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Habilidades Técnicas</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormDescription>Separa cada habilidad con una coma.</FormDescription><FormMessage /></FormItem>
                     )} />
                     <FormField control={form.control} name="habilidades_blandas" render={({ field }) => (
-                        <FormItem><FormLabel>Habilidades Blandas</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormDescription>Cada habilidad en una línea nueva.</FormDescription><FormMessage /></FormItem>
+                        <FormItem><FormLabel>Habilidades Blandas</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormDescription>Separa cada habilidad con una coma.</FormDescription><FormMessage /></FormItem>
                     )} />
                 </div>
                 <FormField control={form.control} name="idiomas" render={({ field }) => (
-                    <FormItem><FormLabel>Idiomas</FormLabel><FormControl><Textarea rows={3} {...field} /></FormControl><FormDescription>Cada idioma en una línea nueva.</FormDescription><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Idiomas</FormLabel><FormControl><Input {...field} /></FormControl><FormDescription>Separa cada idioma con una coma.</FormDescription><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="certificaciones" render={({ field }) => (
-                    <FormItem><FormLabel>Certificaciones</FormLabel><FormControl><Textarea rows={3} {...field} /></FormControl><FormDescription>Cada certificación en una línea nueva.</FormDescription><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Certificaciones</FormLabel><FormControl><Input {...field} /></FormControl><FormDescription>Separa cada certificación con una coma.</FormDescription><FormMessage /></FormItem>
                 )} />
+                </CardContent></Card>
 
                 <CardFooter className="flex justify-end gap-4 p-0 pt-6">
                     <Button type="button" variant="outline" onClick={startOver}>Cancelar</Button>
@@ -342,15 +367,21 @@ export function CvOptimizer() {
                 </div>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-start bg-gray-100 p-4 sm:p-8">
-                <div ref={cvPreviewRef} className="cv-preview-container">
+                <div id="cv-preview" ref={cvPreviewRef} className="cv-preview-container">
                   <div className="cv-grid">
                     <div className="cv-main-col">
-                      <header className="cv-header mb-8">
-                        <h1>{fullName}</h1>
-                        <h2>{optimizedCv.title}</h2>
+                      <header className="cv-header mb-8 text-center">
+                        <h1 className="text-5xl font-bold text-gray-800">{fullName}</h1>
+                        <h2 className="text-2xl font-light text-gray-600 mt-2">{optimizedCv.title}</h2>
                       </header>
+                      
+                      <section className="mb-6">
+                        <h3 className="cv-section-title"><FileText className="inline-block mr-2" />Resumen Profesional</h3>
+                        <p className="text-base text-gray-700">{optimizedCv.resumen_profesional}</p>
+                      </section>
+
                       <section>
-                        <h3 className="cv-section-title">Experiencia</h3>
+                        <h3 className="cv-section-title">Experiencia Laboral</h3>
                         {optimizedCv.experiencia_laboral.map((exp, i) => (
                           <div key={i} className="cv-exp-item">
                             <h4 className="cv-exp-title">{exp.puesto}</h4>
@@ -360,7 +391,7 @@ export function CvOptimizer() {
                         ))}
                       </section>
                       <section>
-                        <h3 className="cv-section-title">Educación</h3>
+                        <h3 className="cv-section-title">Formación Académica</h3>
                         {optimizedCv.formacion_academica.map((edu, i) => (
                           <div key={i} className="cv-edu-item">
                             <h4 className="cv-edu-title">{edu.titulo}</h4>
@@ -373,11 +404,11 @@ export function CvOptimizer() {
                       {profilePicUrl && <img src={profilePicUrl} alt="Foto de perfil" className="cv-profile-pic" data-ai-hint="profile picture" />}
                       <section className="mb-6">
                         <h3 className="cv-section-title">Contacto</h3>
-                        <div className="cv-contact-item"><Mail className="w-4 h-4" /> {optimizedCv.contacto.email}</div>
-                        <div className="cv-contact-item"><Phone className="w-4 h-4" /> {optimizedCv.contacto.telefono}</div>
-                        <div className="cv-contact-item"><MapPin className="w-4 h-4" /> {optimizedCv.contacto.ubicacion}</div>
-                        {optimizedCv.contacto.linkedin && <div className="cv-contact-item"><Linkedin className="w-4 h-4" /> {optimizedCv.contacto.linkedin}</div>}
-                        {optimizedCv.contacto.sitio_web && <div className="cv-contact-item"><Globe className="w-4 h-4" /> {optimizedCv.contacto.sitio_web}</div>}
+                        {optimizedCv.contacto.email && <div className="cv-contact-item"><Mail className="w-4 h-4" /> <span>{optimizedCv.contacto.email}</span></div>}
+                        {optimizedCv.contacto.telefono && <div className="cv-contact-item"><Phone className="w-4 h-4" /> <span>{optimizedCv.contacto.telefono}</span></div>}
+                        {optimizedCv.contacto.ubicacion && <div className="cv-contact-item"><MapPin className="w-4 h-4" /> <span>{optimizedCv.contacto.ubicacion}</span></div>}
+                        {optimizedCv.contacto.linkedin && <div className="cv-contact-item"><Linkedin className="w-4 h-4" /> <span>{optimizedCv.contacto.linkedin.replace('https://', '')}</span></div>}
+                        {optimizedCv.contacto.sitio_web && <div className="cv-contact-item"><Globe className="w-4 h-4" /> <span>{optimizedCv.contacto.sitio_web.replace('https://', '')}</span></div>}
                       </section>
                       <section className="mb-6">
                         <h3 className="cv-section-title">Habilidades Técnicas</h3>
@@ -393,16 +424,12 @@ export function CvOptimizer() {
                       </section>
                       <section className="mb-6">
                         <h3 className="cv-section-title">Idiomas</h3>
-                        <div className="cv-skills-list">
-                          {optimizedCv.idiomas.map((lang, i) => <span key={i} className="cv-skill-item">{lang}</span>)}
-                        </div>
+                          {optimizedCv.idiomas.map((lang, i) => <p key={i} className="text-base text-gray-700">{lang}</p>)}
                       </section>
                       {optimizedCv.certificaciones.length > 0 && (
                         <section>
                           <h3 className="cv-section-title">Certificaciones</h3>
-                          <div className="cv-skills-list">
-                            {optimizedCv.certificaciones.map((cert, i) => <span key={i} className="cv-skill-item">{cert}</span>)}
-                          </div>
+                            {optimizedCv.certificaciones.map((cert, i) => <p key={i} className="text-base text-gray-700">{cert}</p>)}
                         </section>
                       )}
                     </div>
