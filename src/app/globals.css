@@ -86,57 +86,65 @@
 
 @layer components {
   .cv-preview-container {
-      @apply bg-white p-12 shadow-lg;
-      color: #000;
+      @apply bg-white p-8 shadow-lg;
+      color: #111827;
       width: 210mm;
       min-height: 297mm;
-      font-family: var(--font-pt-sans);
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
   }
-  .cv-preview-header {
-      @apply text-center mb-6;
+
+  .cv-grid {
+      @apply grid grid-cols-3 gap-8;
   }
-  .cv-preview-header h1 {
-      @apply font-headline text-3xl font-bold;
+
+  .cv-main-col {
+      @apply col-span-2;
   }
-  .cv-preview-section {
+
+  .cv-sidebar-col {
+      @apply col-span-1;
+  }
+
+  .cv-header h1 {
+      @apply text-4xl font-bold text-gray-800;
+  }
+
+  .cv-header h2 {
+      @apply text-xl font-light text-gray-600;
+  }
+
+  .cv-section-title {
+      @apply text-sm font-bold uppercase tracking-wider text-gray-500 pb-2 mb-2 border-b-2 border-gray-200;
+  }
+
+  .cv-profile-pic {
+      @apply w-32 h-32 rounded-full mx-auto mb-4 object-cover;
+  }
+  
+  .cv-contact-item {
+      @apply flex items-center gap-2 text-sm text-gray-600 mb-1;
+  }
+
+  .cv-skills-list {
+      @apply flex flex-wrap gap-2;
+  }
+  .cv-skill-item {
+      @apply bg-gray-200 text-gray-700 text-xs font-medium px-2 py-1 rounded;
+  }
+
+  .cv-exp-item, .cv-edu-item {
       @apply mb-4;
   }
-  .cv-preview-section h2 {
-      @apply font-headline text-lg font-bold pb-1 mb-2 flex items-center gap-2;
-  }
-  .cv-preview-section p,
-  .cv-preview-section ul {
-      @apply text-sm leading-relaxed;
-      color: #374151; /* gray-700 */
-  }
-  .cv-preview-section ul {
-      @apply list-disc list-inside;
+
+  .cv-exp-title, .cv-edu-title {
+      @apply text-base font-semibold text-gray-800;
   }
 
-  /* Minimalist Style */
-  .cv-minimalist .cv-preview-section h2 {
-      border-bottom: 2px solid #D1D5DB; /* gray-300 */
-      color: #1F2937; /* gray-800 */
+  .cv-exp-subtitle, .cv-edu-subtitle {
+      @apply text-sm text-gray-600;
   }
 
-  /* Modern Style */
-  .cv-modern .cv-preview-section h2 {
-      border-bottom: 2px solid hsl(var(--primary));
-      color: hsl(var(--primary));
-  }
-  .cv-modern .cv-preview-section {
-    border-left: none;
-    padding-left: 0;
-  }
-
-
-  /* Classic Style */
-  .cv-classic {
-      font-family: var(--font-playfair-display);
-  }
-  .cv-classic .cv-preview-section h2 {
-      @apply text-center tracking-widest uppercase p-2;
-      border: 4px double #6B7280; /* gray-500 */
-      color: #374151; /* gray-700 */
+  .cv-exp-desc {
+      @apply text-sm text-gray-700 mt-1;
   }
 }

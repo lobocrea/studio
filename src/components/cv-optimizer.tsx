@@ -5,7 +5,7 @@ import { generateOptimizedCv, type GenerateOptimizedCvOutput } from '@/ai/flows/
 import { zodResolver } from '@hookform/resolvers/zod';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { Award, Briefcase, Download, FileText, GraduationCap, Languages, Loader2, UploadCloud, User, Wand2, Wrench, X } from 'lucide-react';
+import { Award, Briefcase, Download, FileText, GraduationCap, Languages, Loader2, Mail, MapPin, Phone, UploadCloud, User, Wand2, Wrench, X, Globe, Linkedin, FileImage } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -25,6 +25,7 @@ type CVStyle = 'Minimalist' | 'Modern' | 'Classic';
 
 const formSchema = z.object({
   fullName: z.string().min(1, 'El nombre completo es requerido.'),
+  profilePic: z.any().optional(),
   style: z.enum(['Minimalist', 'Modern', 'Classic']),
   resumen_profesional: z.string(),
   experiencia_laboral: z.string(),
@@ -33,6 +34,11 @@ const formSchema = z.object({
   habilidades_blandas: z.string(),
   idiomas: z.string(),
   certificaciones: z.string(),
+  email: z.string().email().optional(),
+  telefono: z.string().optional(),
+  ubicacion: z.string().optional(),
+  linkedin: z.string().url().optional(),
+  sitio_web: z.string().url().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -40,12 +46,13 @@ type FormValues = z.infer<typeof formSchema>;
 export function CvOptimizer() {
   const [step, setStep] = useState<Step>('upload');
   const [error, setError] = useState<string | null>(null);
-  const [extractedData, setExtractedData] = useState<ExtractCvDataOutput | null>(null);
   const [optimizedCv, setOptimizedCv] = useState<GenerateOptimizedCvOutput | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<CVStyle>('Modern');
   const [fullName, setFullName] = useState<string>('');
+  const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('cv-optimizado');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const profilePicInputRef = useRef<HTMLInputElement>(null);
   const cvPreviewRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -61,6 +68,11 @@ export function CvOptimizer() {
       habilidades_blandas: '',
       idiomas: '',
       certificaciones: '',
+      email: '',
+      telefono: '',
+      ubicacion: '',
+      linkedin: '',
+      sitio_web: '',
     },
   });
 
@@ -77,7 +89,6 @@ export function CvOptimizer() {
       try {
         const pdfDataUri = reader.result as string;
         const result = await extractCvData({ pdfDataUri });
-        setExtractedData(result);
         form.reset({
           fullName: '',
           style: 'Modern',
@@ -101,6 +112,17 @@ export function CvOptimizer() {
       setStep('upload');
     };
   };
+
+  const handleProfilePicChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setProfilePicUrl(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   
   const handleGenerateSubmit = async (values: FormValues) => {
     setStep('generating');
@@ -109,7 +131,7 @@ export function CvOptimizer() {
     setFullName(values.fullName);
     setFileName(values.fullName.trim().replace(/\s+/g, '-').toLowerCase());
     
-    const extractedDataJSON = JSON.stringify({
+    const extractedData = {
         resumen_profesional: values.resumen_profesional,
         experiencia_laboral: values.experiencia_laboral.split('\n').filter(Boolean),
         formacion_academica: values.formacion_academica.split('\n').filter(Boolean),
@@ -119,10 +141,17 @@ export function CvOptimizer() {
         },
         idiomas: values.idiomas.split('\n').filter(Boolean),
         certificaciones: values.certificaciones.split('\n').filter(Boolean),
-    });
+        contacto: {
+          email: values.email,
+          telefono: values.telefono,
+          ubicacion: values.ubicacion,
+          linkedin: values.linkedin,
+          sitio_web: values.sitio_web,
+        }
+    };
 
     try {
-        const result = await generateOptimizedCv({ extractedData: extractedDataJSON, style: values.style });
+        const result = await generateOptimizedCv({ extractedData: JSON.stringify(extractedData), style: values.style });
         setOptimizedCv(result);
         setStep('result');
     } catch(e) {
@@ -131,36 +160,36 @@ export function CvOptimizer() {
         setStep('preview');
     }
   };
-
-  const handleDownloadJson = () => {
-    if (!extractedData) return;
-    const jsonBlob = new Blob([JSON.stringify(extractedData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(jsonBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${fileName || 'datos-cv'}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
   
   const handleDownloadPdf = async () => {
     if (!cvPreviewRef.current) return;
     setIsDownloading(true);
     try {
-        const canvas = await html2canvas(cvPreviewRef.current, { scale: 3, useCORS: true, backgroundColor: '#ffffff' });
-        const imgData = canvas.toDataURL('image/png');
+        const canvas = await html2canvas(cvPreviewRef.current, { 
+            scale: 2, 
+            useCORS: true, 
+            backgroundColor: '#ffffff',
+            logging: true,
+            onclone: (document) => {
+              // On clone, we can modify the cloned document before rendering
+              // This is useful if some styles are not being applied correctly
+            }
+        });
+        const imgData = canvas.toDataURL('image/png', 1.0);
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
-        const imgProps= pdf.getImageProperties(imgData);
-        const ratio = Math.min(pdfWidth / imgProps.width, pdfHeight / imgProps.height);
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const ratio = Math.min(pdfWidth / canvasWidth, pdfHeight / canvasHeight);
+
+        const imgWidth = canvasWidth * ratio;
+        const imgHeight = canvasHeight * ratio;
         
-        pdf.addImage(imgData, 'PNG', 0, 0, imgProps.width * ratio, imgProps.height * ratio);
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
         pdf.save(`${fileName || 'cv-optimizado'}.pdf`);
     } catch (e) {
-        console.error(e);
+        console.error("Error generating PDF:", e);
         setError("Error al generar el PDF. Por favor, intente de nuevo.");
     } finally {
         setIsDownloading(false);
@@ -170,58 +199,9 @@ export function CvOptimizer() {
   const startOver = () => {
     setStep('upload');
     setError(null);
-    setExtractedData(null);
     setOptimizedCv(null);
+    setProfilePicUrl(null);
     form.reset();
-  };
-  
-  const iconMap: { [key: string]: React.ElementType } = {
-    'Resumen profesional': User,
-    'Experiencia laboral': Briefcase,
-    'Formación académica': GraduationCap,
-    'Habilidades': Wrench,
-    'Idiomas': Languages,
-    'Certificaciones': Award,
-  };
-
-  const renderCvContent = (text: string) => {
-    const sections: { [key: string]: string[] } = {};
-    const sectionHeaders = ['Resumen profesional', 'Experiencia laboral', 'Formación académica', 'Habilidades', 'Idiomas', 'Certificaciones'];
-    let currentSection: string | null = null;
-    
-    text.split('\n').forEach(line => {
-      const trimmedLine = line.trim();
-      if (!trimmedLine) return;
-  
-      const header = sectionHeaders.find(h => trimmedLine.toLowerCase().replace(/:$/, '') === h.toLowerCase());
-  
-      if (header) {
-        currentSection = header;
-        if (!sections[currentSection]) {
-          sections[currentSection] = [];
-        }
-      } else if (currentSection) {
-        sections[currentSection].push(trimmedLine);
-      }
-    });
-  
-    return Object.entries(sections).map(([title, content]) => {
-      const Icon = iconMap[title] || FileText;
-      const filteredContent = content.filter(item => item.trim() !== '');
-      if (filteredContent.length === 0) return null;
-  
-      return (
-        <div key={title} className="cv-preview-section">
-          <h2>
-            <Icon className="h-5 w-5" />
-            <span>{title}</span>
-          </h2>
-          {filteredContent.map((item, index) => (
-            <p key={index} className="break-words">{item}</p>
-          ))}
-        </div>
-      );
-    });
   };
 
   if (error) {
@@ -262,12 +242,12 @@ export function CvOptimizer() {
         <Card>
           <CardHeader>
             <CardTitle className="font-headline text-2xl">Revisa y Edita tu Información</CardTitle>
-            <CardDescription>Ajusta los datos extraídos por la IA y elige un estilo para tu nuevo CV.</CardDescription>
+            <CardDescription>Ajusta los datos extraídos por la IA, sube una foto y elige un estilo para tu nuevo CV.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleGenerateSubmit)} className="space-y-8">
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="grid md:grid-cols-2 gap-8 items-start">
                   <FormField control={form.control} name="fullName" render={({ field }) => (
                       <FormItem>
                           <FormLabel>Nombre Completo</FormLabel>
@@ -275,22 +255,39 @@ export function CvOptimizer() {
                           <FormMessage />
                       </FormItem>
                   )} />
-                  <FormField control={form.control} name="style" render={({ field }) => (
+                  <FormField control={form.control} name="profilePic" render={({ field }) => (
                       <FormItem>
-                          <FormLabel>Estilo del CV</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un estilo" /></SelectTrigger></FormControl>
-                              <SelectContent>
-                                  <SelectItem value="Modern">Moderno</SelectItem>
-                                  <SelectItem value="Minimalist">Minimalista</SelectItem>
-                                  <SelectItem value="Classic">Clásico</SelectItem>
-                              </SelectContent>
-                          </Select>
+                          <FormLabel>Foto de Perfil</FormLabel>
+                          <FormControl>
+                            <div className="flex items-center gap-4">
+                              <Button type="button" variant="outline" onClick={() => profilePicInputRef.current?.click()}>
+                                <FileImage className="mr-2 h-4 w-4" />
+                                {profilePicUrl ? 'Cambiar foto' : 'Subir foto'}
+                              </Button>
+                              {profilePicUrl && <img src={profilePicUrl} alt="Preview" className="h-12 w-12 rounded-full object-cover" />}
+                              <input type="file" ref={profilePicInputRef} onChange={handleProfilePicChange} accept="image/*" className="hidden" />
+                            </div>
+                          </FormControl>
                           <FormMessage />
                       </FormItem>
                   )} />
                 </div>
-                
+
+                <FormField control={form.control} name="style" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Estilo del CV</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un estilo" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="Modern">Moderno</SelectItem>
+                                <SelectItem value="Minimalist">Minimalista</SelectItem>
+                                <SelectItem value="Classic">Clásico</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+
                 <FormField control={form.control} name="resumen_profesional" render={({ field }) => (
                     <FormItem><FormLabel>Resumen Profesional</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
@@ -334,10 +331,9 @@ export function CvOptimizer() {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <CardTitle className="font-headline text-2xl">¡Tu CV está listo!</CardTitle>
-                        <CardDescription>Descárgalo en formato PDF y JSON. ¡Mucha suerte en tu búsqueda!</CardDescription>
+                        <CardDescription>Descárgalo en formato PDF. ¡Mucha suerte en tu búsqueda!</CardDescription>
                     </div>
                     <div className="flex gap-2 w-full md:w-auto">
-                        <Button onClick={handleDownloadJson} variant="secondary" className="w-full md:w-auto"><Download className="mr-2 h-4 w-4"/> JSON</Button>
                         <Button onClick={handleDownloadPdf} className="w-full md:w-auto" disabled={isDownloading}>
                             {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                             PDF
@@ -345,12 +341,72 @@ export function CvOptimizer() {
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="flex flex-col items-center justify-start bg-gray-200 p-4 sm:p-8">
-                <div ref={cvPreviewRef} className={cn('cv-preview-container', `cv-${selectedStyle.toLowerCase()}`)}>
-                    <div className="cv-preview-header">
+            <CardContent className="flex flex-col items-center justify-start bg-gray-100 p-4 sm:p-8">
+                <div ref={cvPreviewRef} className="cv-preview-container">
+                  <div className="cv-grid">
+                    <div className="cv-main-col">
+                      <header className="cv-header mb-8">
                         <h1>{fullName}</h1>
+                        <h2>{optimizedCv.title}</h2>
+                      </header>
+                      <section>
+                        <h3 className="cv-section-title">Experiencia</h3>
+                        {optimizedCv.experiencia_laboral.map((exp, i) => (
+                          <div key={i} className="cv-exp-item">
+                            <h4 className="cv-exp-title">{exp.puesto}</h4>
+                            <p className="cv-exp-subtitle">{exp.empresa} | {exp.fecha}</p>
+                            <p className="cv-exp-desc">{exp.descripcion}</p>
+                          </div>
+                        ))}
+                      </section>
+                      <section>
+                        <h3 className="cv-section-title">Educación</h3>
+                        {optimizedCv.formacion_academica.map((edu, i) => (
+                          <div key={i} className="cv-edu-item">
+                            <h4 className="cv-edu-title">{edu.titulo}</h4>
+                            <p className="cv-edu-subtitle">{edu.institucion} | {edu.fecha}</p>
+                          </div>
+                        ))}
+                      </section>
                     </div>
-                    {renderCvContent(optimizedCv.optimizedCvText)}
+                    <div className="cv-sidebar-col">
+                      {profilePicUrl && <img src={profilePicUrl} alt="Foto de perfil" className="cv-profile-pic" data-ai-hint="profile picture" />}
+                      <section className="mb-6">
+                        <h3 className="cv-section-title">Contacto</h3>
+                        <div className="cv-contact-item"><Mail className="w-4 h-4" /> {optimizedCv.contacto.email}</div>
+                        <div className="cv-contact-item"><Phone className="w-4 h-4" /> {optimizedCv.contacto.telefono}</div>
+                        <div className="cv-contact-item"><MapPin className="w-4 h-4" /> {optimizedCv.contacto.ubicacion}</div>
+                        {optimizedCv.contacto.linkedin && <div className="cv-contact-item"><Linkedin className="w-4 h-4" /> {optimizedCv.contacto.linkedin}</div>}
+                        {optimizedCv.contacto.sitio_web && <div className="cv-contact-item"><Globe className="w-4 h-4" /> {optimizedCv.contacto.sitio_web}</div>}
+                      </section>
+                      <section className="mb-6">
+                        <h3 className="cv-section-title">Habilidades Técnicas</h3>
+                        <div className="cv-skills-list">
+                          {optimizedCv.habilidades.tecnicas.map((skill, i) => <span key={i} className="cv-skill-item">{skill}</span>)}
+                        </div>
+                      </section>
+                      <section className="mb-6">
+                        <h3 className="cv-section-title">Habilidades Blandas</h3>
+                        <div className="cv-skills-list">
+                          {optimizedCv.habilidades.blandas.map((skill, i) => <span key={i} className="cv-skill-item">{skill}</span>)}
+                        </div>
+                      </section>
+                      <section className="mb-6">
+                        <h3 className="cv-section-title">Idiomas</h3>
+                        <div className="cv-skills-list">
+                          {optimizedCv.idiomas.map((lang, i) => <span key={i} className="cv-skill-item">{lang}</span>)}
+                        </div>
+                      </section>
+                      {optimizedCv.certificaciones.length > 0 && (
+                        <section>
+                          <h3 className="cv-section-title">Certificaciones</h3>
+                          <div className="cv-skills-list">
+                            {optimizedCv.certificaciones.map((cert, i) => <span key={i} className="cv-skill-item">{cert}</span>)}
+                          </div>
+                        </section>
+                      )}
+                    </div>
+                  </div>
                 </div>
             </CardContent>
             <CardFooter className="justify-center pt-6">
