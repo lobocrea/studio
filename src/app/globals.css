@@ -92,11 +92,17 @@
       min-height: 297mm;
       font-family: var(--font-pt-sans);
   }
+  .cv-preview-header {
+      @apply text-center mb-6;
+  }
+  .cv-preview-header h1 {
+      @apply font-headline text-3xl font-bold;
+  }
   .cv-preview-section {
       @apply mb-4;
   }
   .cv-preview-section h2 {
-      @apply font-headline text-lg font-bold pb-1 mb-2;
+      @apply font-headline text-lg font-bold pb-1 mb-2 flex items-center gap-2;
   }
   .cv-preview-section p,
   .cv-preview-section ul {
@@ -119,13 +125,10 @@
       color: hsl(var(--primary));
   }
   .cv-modern .cv-preview-section {
-      border-left: 4px solid hsl(var(--accent));
-      padding-left: 1rem;
+    border-left: none;
+    padding-left: 0;
   }
-  .cv-modern .cv-preview-section:first-child {
-      border-left: 0;
-      padding-left: 0;
-  }
+
 
   /* Classic Style */
   .cv-classic {

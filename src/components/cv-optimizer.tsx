@@ -43,6 +43,7 @@ export function CvOptimizer() {
   const [extractedData, setExtractedData] = useState<ExtractCvDataOutput | null>(null);
   const [optimizedCv, setOptimizedCv] = useState<GenerateOptimizedCvOutput | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<CVStyle>('Modern');
+  const [fullName, setFullName] = useState<string>('');
   const [fileName, setFileName] = useState<string>('cv-optimizado');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cvPreviewRef = useRef<HTMLDivElement>(null);
@@ -105,6 +106,7 @@ export function CvOptimizer() {
     setStep('generating');
     setError(null);
     setSelectedStyle(values.style);
+    setFullName(values.fullName);
     setFileName(values.fullName.trim().replace(/\s+/g, '-').toLowerCase());
     
     const extractedDataJSON = JSON.stringify({
@@ -205,13 +207,12 @@ export function CvOptimizer() {
   
     return Object.entries(sections).map(([title, content]) => {
       const Icon = iconMap[title] || FileText;
-      // Filter out empty lines from content
       const filteredContent = content.filter(item => item.trim() !== '');
       if (filteredContent.length === 0) return null;
   
       return (
         <div key={title} className="cv-preview-section">
-          <h2 className="flex items-center gap-2">
+          <h2>
             <Icon className="h-5 w-5" />
             <span>{title}</span>
           </h2>
@@ -269,7 +270,7 @@ export function CvOptimizer() {
                 <div className="grid md:grid-cols-2 gap-8">
                   <FormField control={form.control} name="fullName" render={({ field }) => (
                       <FormItem>
-                          <FormLabel>Nombre Completo (para los archivos)</FormLabel>
+                          <FormLabel>Nombre Completo</FormLabel>
                           <FormControl><Input placeholder="Ej: Ana García" {...field} /></FormControl>
                           <FormMessage />
                       </FormItem>
@@ -346,6 +347,9 @@ export function CvOptimizer() {
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-start bg-gray-200 p-4 sm:p-8">
                 <div ref={cvPreviewRef} className={cn('cv-preview-container', `cv-${selectedStyle.toLowerCase()}`)}>
+                    <div className="cv-preview-header">
+                        <h1>{fullName}</h1>
+                    </div>
                     {renderCvContent(optimizedCv.optimizedCvText)}
                 </div>
             </CardContent>
