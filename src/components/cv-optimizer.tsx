@@ -211,12 +211,14 @@ export function CvOptimizer() {
 
   if (error) {
     return (
-        <Alert variant="destructive">
-            <X className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-            <Button onClick={startOver} variant="outline" className="mt-4">Empezar de nuevo</Button>
-        </Alert>
+        <div className="glassmorphism-card p-6">
+            <Alert variant="destructive" className="bg-transparent border-0">
+                <X className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+                <Button onClick={startOver} variant="outline" className="mt-4">Empezar de nuevo</Button>
+            </Alert>
+        </div>
     );
   }
 
@@ -226,7 +228,7 @@ export function CvOptimizer() {
   return (
     <div className="w-full">
       {step === 'upload' && (
-        <Card className="text-center">
+        <Card className="text-center glassmorphism-card">
             <CardHeader>
                 <CardTitle className="font-headline text-2xl">Sube tu CV en PDF</CardTitle>
                 <CardDescription>Empecemos por subir tu CV actual. La IA extraerá la información clave.</CardDescription>
@@ -244,7 +246,7 @@ export function CvOptimizer() {
       )}
 
       {step === 'preview' && (
-        <Card>
+        <Card className="glassmorphism-card">
           <CardHeader>
             <CardTitle className="font-headline text-2xl">Revisa y Edita tu Información</CardTitle>
             <CardDescription>Ajusta los datos extraídos, completa tu contacto, sube una foto y elige un estilo para tu nuevo CV.</CardDescription>
@@ -253,7 +255,7 @@ export function CvOptimizer() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleGenerateSubmit)} className="space-y-8">
                 
-                <Card><CardHeader><CardTitle>Información Personal</CardTitle></CardHeader><CardContent className="pt-6">
+                <Card className="bg-white/5 border-white/10"><CardHeader><CardTitle>Información Personal</CardTitle></CardHeader><CardContent className="pt-6">
                 <div className="grid md:grid-cols-2 gap-8 items-start">
                   <FormField control={form.control} name="fullName" render={({ field }) => (
                       <FormItem>
@@ -296,7 +298,7 @@ export function CvOptimizer() {
                 </div>
                 </CardContent></Card>
 
-                <Card><CardHeader><CardTitle>Contenido del CV</CardTitle></CardHeader><CardContent className="pt-6 space-y-8">
+                <Card className="bg-white/5 border-white/10"><CardHeader><CardTitle>Contenido del CV</CardTitle></CardHeader><CardContent className="pt-6 space-y-8">
                 <FormField control={form.control} name="style" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Estilo del CV</FormLabel>
@@ -351,7 +353,7 @@ export function CvOptimizer() {
       )}
 
       {step === 'result' && optimizedCv && (
-        <Card>
+        <Card className="glassmorphism-card">
             <CardHeader>
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
@@ -366,7 +368,7 @@ export function CvOptimizer() {
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="flex flex-col items-center justify-start bg-gray-100 p-4 sm:p-8">
+            <CardContent className="flex flex-col items-center justify-start bg-gray-900/50 p-4 sm:p-8 rounded-lg">
                 <div id="cv-preview" ref={cvPreviewRef} className="cv-preview-container">
                   <div className="cv-grid">
                     <div className="cv-main-col">
@@ -444,5 +446,3 @@ export function CvOptimizer() {
     </div>
   );
 }
-
-    
