@@ -18,6 +18,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingState } from './loading-state';
+import { useRouter } from 'next/navigation';
+import { Badge } from './ui/badge';
 
 type Step = 'upload' | 'extracting' | 'preview' | 'generating' | 'result';
 type CVStyle = 'Minimalist' | 'Modern' | 'Classic';
@@ -54,6 +56,7 @@ export function CvOptimizer() {
   const profilePicInputRef = useRef<HTMLInputElement>(null);
   const cvPreviewRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const router = useRouter();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -169,18 +172,12 @@ export function CvOptimizer() {
     if (!cvPreviewRef.current) return;
     setIsDownloading(true);
     try {
-        // Temporarily change background for capture
-        cvPreviewRef.current.style.backgroundColor = 'white';
-
         const canvas = await html2canvas(cvPreviewRef.current, { 
             scale: 3, 
-            useCORS: true, 
-            backgroundColor: null, // Use transparent background for canvas
+            useCORS: true,
+            backgroundColor: '#ffffff',
             logging: true,
         });
-
-        // Restore original background
-        cvPreviewRef.current.style.backgroundColor = '';
 
         const imgData = canvas.toDataURL('image/png', 1.0);
         const pdf = new jsPDF('p', 'mm', 'a4', true);
@@ -191,7 +188,10 @@ export function CvOptimizer() {
         const ratio = canvasWidth / pdfWidth;
         const finalHeight = canvasHeight / ratio;
 
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, finalHeight, undefined, 'FAST');
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, finalHeight > pdfHeight ? pdfHeight : finalHeight, undefined, 'FAST');
+        if (finalHeight > pdfHeight) {
+          console.warn("CV content is longer than one page. Truncating PDF.");
+        }
         pdf.save(`${fileName || 'cv-optimizado'}.pdf`);
     } catch (e) {
         console.error("Error generating PDF:", e);
@@ -207,6 +207,11 @@ export function CvOptimizer() {
     setOptimizedCv(null);
     setProfilePicUrl(null);
     form.reset();
+  };
+  
+  const handleLogout = () => {
+    // In a real app, you'd clear tokens and state.
+    router.push('/');
   };
 
   if (error) {
@@ -242,6 +247,9 @@ export function CvOptimizer() {
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".pdf" className="hidden" />
                 </div>
             </CardContent>
+             <CardFooter className="justify-center">
+                <Button variant="link" onClick={handleLogout}>Cerrar Sesión</Button>
+            </CardFooter>
         </Card>
       )}
 
