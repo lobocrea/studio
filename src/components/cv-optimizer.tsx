@@ -1,6 +1,6 @@
 'use client';
 
-import { extractCvData } from '@/ai/flows/extract-cv-data';
+import { extractCvData, type ExtractCvDataOutput } from '@/ai/flows/extract-cv-data';
 import { generateOptimizedCv, type GenerateOptimizedCvOutput } from '@/ai/flows/generate-optimized-cv';
 import { zodResolver } from '@hookform/resolvers/zod';
 import html2canvas from 'html2canvas';
@@ -44,6 +44,24 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
+const getInitialFormValues = (cvData?: Partial<ExtractCvDataOutput & FormValues>): FormValues => ({
+  fullName: cvData?.fullName || '',
+  style: 'Modern',
+  resumen_profesional: cvData?.resumen_profesional || '',
+  experiencia_laboral: cvData?.experiencia_laboral?.join('\n\n') || '',
+  formacion_academica: cvData?.formacion_academica?.join('\n') || '',
+  habilidades_tecnicas: cvData?.habilidades?.tecnicas?.join(', ') || '',
+  habilidades_blandas: cvData?.habilidades?.blandas?.join(', ') || '',
+  idiomas: cvData?.idiomas?.join(', ') || '',
+  certificaciones: cvData?.certificaciones?.join(', ') || '',
+  email: cvData?.email || '',
+  telefono: cvData?.telefono || '',
+  ubicacion: cvData?.ubicacion || '',
+  linkedin: cvData?.linkedin || '',
+  sitio_web: cvData?.sitio_web || '',
+});
+
+
 export function CvOptimizer() {
   const [step, setStep] = useState<Step>('upload');
   const [error, setError] = useState<string | null>(null);
@@ -60,22 +78,7 @@ export function CvOptimizer() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      fullName: '',
-      style: 'Modern',
-      resumen_profesional: '',
-      experiencia_laboral: '',
-      formacion_academica: '',
-      habilidades_tecnicas: '',
-      habilidades_blandas: '',
-      idiomas: '',
-      certificaciones: '',
-      email: '',
-      telefono: '',
-      ubicacion: '',
-      linkedin: '',
-      sitio_web: '',
-    },
+    defaultValues: getInitialFormValues(),
   });
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,17 +94,7 @@ export function CvOptimizer() {
       try {
         const pdfDataUri = reader.result as string;
         const result = await extractCvData({ pdfDataUri });
-        form.reset({
-          fullName: '',
-          style: 'Modern',
-          resumen_profesional: result.resumen_profesional,
-          experiencia_laboral: result.experiencia_laboral.join('\n\n'),
-          formacion_academica: result.formacion_academica.join('\n'),
-          habilidades_tecnicas: result.habilidades.tecnicas.join(', '),
-          habilidades_blandas: result.habilidades.blandas.join(', '),
-          idiomas: result.idiomas.join(', '),
-          certificaciones: result.certificaciones.join(', '),
-        });
+        form.reset(getInitialFormValues(result));
         setStep('preview');
       } catch (e) {
         console.error(e);
@@ -206,7 +199,7 @@ export function CvOptimizer() {
     setError(null);
     setOptimizedCv(null);
     setProfilePicUrl(null);
-    form.reset();
+    form.reset(getInitialFormValues());
   };
   
   const handleLogout = () => {
