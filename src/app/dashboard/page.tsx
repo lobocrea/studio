@@ -1,4 +1,5 @@
 import { CvOptimizer } from '@/components/cv-optimizer';
+import { Badge } from '@/components/ui/badge';
 
 export default function DashboardPage() {
   return (
