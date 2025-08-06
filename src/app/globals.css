@@ -27,24 +27,24 @@
   }
  
   .light {
-    --background: 220 20% 96.1%; /* Light gray */
-    --foreground: 222 84% 4.9%;
-    --card: 220 20% 100%;
-    --card-foreground: 222 84% 4.9%;
-    --popover: 220 20% 100%;
-    --popover-foreground: 222 84% 4.9%;
-    --primary: 221 83% 53%; /* Deep blue */
+    --background: 0 0% 100%;
+    --foreground: 224 71.4% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71.4% 4.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71.4% 4.1%;
+    --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 220 15% 90%;
-    --secondary-foreground: 222 84% 4.9%;
-    --muted: 220 15% 90%;
-    --muted-foreground: 222 20% 46.1%;
-    --accent: 96 75% 42%; /* Soft green */
+    --secondary: 220 14.3% 95.9%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 220 14.3% 95.9%;
+    --muted-foreground: 225.2 38.4% 42.2%;
+    --accent: 346.8 77.2% 49.8%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 220 15% 88%;
-    --input: 220 15% 88%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
     --ring: 221 83% 53%;
   }
 }
@@ -60,10 +60,10 @@
 
 @keyframes move {
   0% { transform: translate(0, 0); }
-  25% { transform: translate(10vw, -10vh); }
-  50% { transform: translate(-15vw, 15vh); }
-  75% { transform: translate(5vw, -5vh); }
-  100% { transform: translate(0, 0); }
+  25% { transform: translate(10vw, -10vh) scale(1.1); }
+  50% { transform: translate(-15vw, 15vh) scale(0.9); }
+  75% { transform: translate(5vw, -5vh) scale(1.2); }
+  100% { transform: translate(0, 0) scale(1); }
 }
 
 @layer utilities {
@@ -77,31 +77,44 @@
   .bg-lava-lamp::after {
     content: '';
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
+    top: -25%;
+    left: -25%;
+    width: 150%;
+    height: 150%;
     background-repeat: no-repeat;
-    animation: move 25s linear infinite;
-    will-change: transform; /* Performance hint for animation */
+    animation: move 30s linear infinite;
+    will-change: transform;
+    opacity: 0.7;
   }
 
-  .bg-lava-lamp::before {
-    background-image: radial-gradient(circle, hsl(var(--primary) / 0.3) 0%, transparent 40%),
-                      radial-gradient(circle, hsl(var(--accent) / 0.2) 50%, transparent 80%);
-    filter: blur(40px); /* Add blur for a softer, fluid look */
-    
+  .dark .bg-lava-lamp::before {
+    background-image: radial-gradient(circle, hsl(var(--primary) / 0.2) 0%, transparent 40%),
+                      radial-gradient(circle, hsl(var(--accent) / 0.15) 50%, transparent 80%);
+    filter: blur(80px);
   }
 
-  .bg-lava-lamp::after {
-    background-image: radial-gradient(circle, hsl(var(--primary) / 0.2) 20%, transparent 60%),
-                      radial-gradient(circle, hsl(var(--accent) / 0.3) 70%, transparent 95%);
-    animation-delay: -12.5s;
-    filter: blur(60px); /* Add more blur for the second layer */
+  .dark .bg-lava-lamp::after {
+    background-image: radial-gradient(circle, hsl(var(--primary) / 0.15) 20%, transparent 60%),
+                      radial-gradient(circle, hsl(var(--accent) / 0.2) 70%, transparent 95%);
+    animation-delay: -15s;
+    filter: blur(100px);
+  }
+
+  .light .bg-lava-lamp::before {
+    background-image: radial-gradient(circle, hsl(221 83% 53% / 0.15) 0%, transparent 40%), /* Light Blue */
+                      radial-gradient(circle, hsl(346 77% 49% / 0.1) 50%, transparent 80%);  /* Pink */
+    filter: blur(60px);
+  }
+
+  .light .bg-lava-lamp::after {
+    background-image: radial-gradient(circle, hsl(260 80% 60% / 0.1) 20%, transparent 60%), /* Lavender */
+                      radial-gradient(circle, hsl(190 70% 50% / 0.15) 70%, transparent 95%); /* Cyan */
+    animation-delay: -15s;
+    filter: blur(80px);
   }
 
   .glassmorphism-card {
-    @apply bg-card/50 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-2xl;
+    @apply bg-card/60 dark:bg-card/50 backdrop-blur-lg border border-white/10 shadow-2xl rounded-2xl;
     animation: fadeIn 0.5s ease-out forwards;
   }
 
