@@ -60,7 +60,11 @@ export async function generateOptimizedCv(input: GenerateOptimizedCvInput): Prom
 
 const prompt = ai.definePrompt({
   name: 'generateOptimizedCvPrompt',
-  input: {schema: GenerateOptimizedCvInputSchema},
+  input: {schema: z.object({
+    extractedData: z.string(),
+    contactData: z.string(),
+    style: z.enum(['Minimalist', 'Modern', 'Classic']),
+  })},
   output: {schema: GenerateOptimizedCvOutputSchema},
   prompt: `You are an AI expert in creating optimized CVs for the Spanish job market.
 
@@ -68,7 +72,7 @@ const prompt = ai.definePrompt({
   The CV should be optimized for the Spanish job market.
 
   Extracted Data: {{{extractedData}}}
-  Contact Data: {{{jsonStringify contactData}}}
+  Contact Data: {{{contactData}}}
   Style: {{{style}}}
 
   - From the professional summary, extract a short, professional title.
@@ -91,7 +95,10 @@ const generateOptimizedCvFlow = ai.defineFlow(
     outputSchema: GenerateOptimizedCvOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await prompt({
+      ...input,
+      contactData: JSON.stringify(input.contactData),
+    });
     // Ensure contact info is passed through, sometimes the LLM might forget it.
     const finalOutput = output!;
     finalOutput.contacto.email = input.contactData.email || finalOutput.contacto.email || '';
