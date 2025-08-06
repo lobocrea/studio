@@ -5,7 +5,7 @@ import { generateOptimizedCv, type GenerateOptimizedCvOutput } from '@/ai/flows/
 import { zodResolver } from '@hookform/resolvers/zod';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { Download, FileImage, FileText, Globe, Linkedin, Loader2, Mail, MapPin, Phone, UploadCloud, Wand2, X } from 'lucide-react';
+import { Download, FileText, Globe, Linkedin, Loader2, Mail, MapPin, Phone, UploadCloud, Wand2, X, Briefcase, GraduationCap, Star, Award, Languages } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -19,7 +19,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingState } from './loading-state';
 import { useRouter } from 'next/navigation';
-import { Badge } from './ui/badge';
 
 type Step = 'upload' | 'extracting' | 'preview' | 'generating' | 'result';
 type CVStyle = 'Minimalist' | 'Modern' | 'Classic';
@@ -35,9 +34,9 @@ const formSchema = z.object({
   habilidades_blandas: z.string(),
   idiomas: z.string(),
   certificaciones: z.string(),
-  email: z.string().email('Introduce un email válido.'),
-  telefono: z.string().min(1, 'El teléfono es requerido.'),
-  ubicacion: z.string().min(1, 'La ubicación es requerida.'),
+  email: z.string().email('Introduce un email válido.').optional().or(z.literal('')),
+  telefono: z.string().optional().or(z.literal('')),
+  ubicacion: z.string().optional().or(z.literal('')),
   linkedin: z.string().url('Introduce una URL válida.').optional().or(z.literal('')),
   sitio_web: z.string().url('Introduce una URL válida.').optional().or(z.literal('')),
 });
@@ -66,7 +65,6 @@ export function CvOptimizer() {
   const [step, setStep] = useState<Step>('upload');
   const [error, setError] = useState<string | null>(null);
   const [optimizedCv, setOptimizedCv] = useState<GenerateOptimizedCvOutput | null>(null);
-  const [selectedStyle, setSelectedStyle] = useState<CVStyle>('Modern');
   const [fullName, setFullName] = useState<string>('');
   const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('cv-optimizado');
@@ -122,7 +120,6 @@ export function CvOptimizer() {
   const handleGenerateSubmit = async (values: FormValues) => {
     setStep('generating');
     setError(null);
-    setSelectedStyle(values.style);
     setFullName(values.fullName);
     setFileName(values.fullName.trim().replace(/\s+/g, '-').toLowerCase());
     
@@ -161,30 +158,41 @@ export function CvOptimizer() {
     }
   };
   
-  const handleDownloadPdf = async () => {
+const handleDownloadPdf = async () => {
     if (!cvPreviewRef.current) return;
     setIsDownloading(true);
     try {
-        const canvas = await html2canvas(cvPreviewRef.current, { 
-            scale: 3, 
+        const canvas = await html2canvas(cvPreviewRef.current, {
+            scale: 3,
             useCORS: true,
             backgroundColor: '#ffffff',
-            logging: true,
+            windowWidth: cvPreviewRef.current.scrollWidth,
+            windowHeight: cvPreviewRef.current.scrollHeight,
         });
 
         const imgData = canvas.toDataURL('image/png', 1.0);
         const pdf = new jsPDF('p', 'mm', 'a4', true);
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
+        
         const canvasWidth = canvas.width;
         const canvasHeight = canvas.height;
         const ratio = canvasWidth / pdfWidth;
-        const finalHeight = canvasHeight / ratio;
+        const imgHeight = canvasHeight / ratio;
 
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, finalHeight > pdfHeight ? pdfHeight : finalHeight, undefined, 'FAST');
-        if (finalHeight > pdfHeight) {
-          console.warn("CV content is longer than one page. Truncating PDF.");
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+        heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+            heightLeft -= pdfHeight;
         }
+
         pdf.save(`${fileName || 'cv-optimizado'}.pdf`);
     } catch (e) {
         console.error("Error generating PDF:", e);
@@ -192,7 +200,7 @@ export function CvOptimizer() {
     } finally {
         setIsDownloading(false);
     }
-  };
+};
 
   const startOver = () => {
     setStep('upload');
@@ -271,7 +279,6 @@ export function CvOptimizer() {
                           <FormControl>
                             <div className="flex items-center gap-4">
                               <Button type="button" variant="outline" onClick={() => profilePicInputRef.current?.click()}>
-                                <FileImage className="mr-2 h-4 w-4" />
                                 {profilePicUrl ? 'Cambiar foto' : 'Subir foto'}
                               </Button>
                               {profilePicUrl && <img src={profilePicUrl} alt="Preview" className="h-12 w-12 rounded-full object-cover" />}
@@ -372,19 +379,19 @@ export function CvOptimizer() {
             <CardContent className="flex flex-col items-center justify-start bg-gray-900/50 p-4 sm:p-8 rounded-lg">
                 <div id="cv-preview" ref={cvPreviewRef} className="cv-preview-container">
                   <div className="cv-grid">
-                    <div className="cv-main-col">
-                      <header className="cv-header mb-8 text-center">
-                        <h1 className="text-5xl font-bold text-gray-800">{fullName}</h1>
-                        <h2 className="text-2xl font-light text-gray-600 mt-2">{optimizedCv.title}</h2>
+                    <div className="cv-main-col space-y-4">
+                      <header className="cv-header text-center">
+                        <h1 className="cv-header h1">{fullName}</h1>
+                        <h2 className="cv-header h2 mt-1">{optimizedCv.title}</h2>
                       </header>
                       
-                      <section className="mb-6">
-                        <h3 className="cv-section-title"><FileText className="inline-block mr-2" />Resumen Profesional</h3>
-                        <p className="text-base text-gray-700">{optimizedCv.resumen_profesional}</p>
+                      <section>
+                        <h3 className="cv-section-title"><FileText size={14}/>Resumen Profesional</h3>
+                        <p className="cv-exp-desc">{optimizedCv.resumen_profesional}</p>
                       </section>
 
                       <section>
-                        <h3 className="cv-section-title">Experiencia Laboral</h3>
+                        <h3 className="cv-section-title"><Briefcase size={14}/>Experiencia Laboral</h3>
                         {optimizedCv.experiencia_laboral.map((exp, i) => (
                           <div key={i} className="cv-exp-item">
                             <h4 className="cv-exp-title">{exp.puesto}</h4>
@@ -394,7 +401,7 @@ export function CvOptimizer() {
                         ))}
                       </section>
                       <section>
-                        <h3 className="cv-section-title">Formación Académica</h3>
+                        <h3 className="cv-section-title"><GraduationCap size={14}/>Formación Académica</h3>
                         {optimizedCv.formacion_academica.map((edu, i) => (
                           <div key={i} className="cv-edu-item">
                             <h4 className="cv-edu-title">{edu.titulo}</h4>
@@ -403,36 +410,38 @@ export function CvOptimizer() {
                         ))}
                       </section>
                     </div>
-                    <div className="cv-sidebar-col">
+                    <div className="cv-sidebar-col space-y-4">
                       {profilePicUrl && <img src={profilePicUrl} alt="Foto de perfil" className="cv-profile-pic" data-ai-hint="profile picture" />}
-                      <section className="mb-6">
+                      <section>
                         <h3 className="cv-section-title">Contacto</h3>
-                        {optimizedCv.contacto.email && <div className="cv-contact-item"><Mail className="w-4 h-4" /> <span>{optimizedCv.contacto.email}</span></div>}
-                        {optimizedCv.contacto.telefono && <div className="cv-contact-item"><Phone className="w-4 h-4" /> <span>{optimizedCv.contacto.telefono}</span></div>}
-                        {optimizedCv.contacto.ubicacion && <div className="cv-contact-item"><MapPin className="w-4 h-4" /> <span>{optimizedCv.contacto.ubicacion}</span></div>}
-                        {optimizedCv.contacto.linkedin && <div className="cv-contact-item"><Linkedin className="w-4 h-4" /> <span>{optimizedCv.contacto.linkedin.replace('https://', '')}</span></div>}
-                        {optimizedCv.contacto.sitio_web && <div className="cv-contact-item"><Globe className="w-4 h-4" /> <span>{optimizedCv.contacto.sitio_web.replace('https://', '')}</span></div>}
+                        <div className="space-y-1">
+                          {optimizedCv.contacto.email && <div className="cv-contact-item"><Mail size={12}/> <span>{optimizedCv.contacto.email}</span></div>}
+                          {optimizedCv.contacto.telefono && <div className="cv-contact-item"><Phone size={12}/> <span>{optimizedCv.contacto.telefono}</span></div>}
+                          {optimizedCv.contacto.ubicacion && <div className="cv-contact-item"><MapPin size={12}/> <span>{optimizedCv.contacto.ubicacion}</span></div>}
+                          {optimizedCv.contacto.linkedin && <div className="cv-contact-item"><Linkedin size={12}/> <span>{optimizedCv.contacto.linkedin.replace('https://', '')}</span></div>}
+                          {optimizedCv.contacto.sitio_web && <div className="cv-contact-item"><Globe size={12}/> <span>{optimizedCv.contacto.sitio_web.replace('https://', '')}</span></div>}
+                        </div>
                       </section>
-                      <section className="mb-6">
-                        <h3 className="cv-section-title">Habilidades Técnicas</h3>
+                      <section>
+                        <h3 className="cv-section-title"><Star size={14}/>Habilidades Técnicas</h3>
                         <div className="cv-skills-list">
                           {optimizedCv.habilidades.tecnicas.map((skill, i) => <span key={i} className="cv-skill-item">{skill}</span>)}
                         </div>
                       </section>
-                      <section className="mb-6">
-                        <h3 className="cv-section-title">Habilidades Blandas</h3>
+                      <section>
+                        <h3 className="cv-section-title"><Star size={14}/>Habilidades Blandas</h3>
                         <div className="cv-skills-list">
                           {optimizedCv.habilidades.blandas.map((skill, i) => <span key={i} className="cv-skill-item">{skill}</span>)}
                         </div>
                       </section>
-                      <section className="mb-6">
-                        <h3 className="cv-section-title">Idiomas</h3>
-                          {optimizedCv.idiomas.map((lang, i) => <p key={i} className="text-base text-gray-700">{lang}</p>)}
+                      <section>
+                        <h3 className="cv-section-title"><Languages size={14}/>Idiomas</h3>
+                          {optimizedCv.idiomas.map((lang, i) => <p key={i} className="cv-text-xs">{lang}</p>)}
                       </section>
                       {optimizedCv.certificaciones.length > 0 && (
                         <section>
-                          <h3 className="cv-section-title">Certificaciones</h3>
-                            {optimizedCv.certificaciones.map((cert, i) => <p key={i} className="text-base text-gray-700">{cert}</p>)}
+                          <h3 className="cv-section-title"><Award size={14}/>Certificaciones</h3>
+                            {optimizedCv.certificaciones.map((cert, i) => <p key={i} className="cv-text-xs">{cert}</p>)}
                         </section>
                       )}
                     </div>

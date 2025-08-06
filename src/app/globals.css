@@ -27,25 +27,25 @@
   }
  
   .light {
-    --background: 0 0% 100%;
-    --foreground: 224 71.4% 4.1%;
-    --card: 0 0% 100%;
-    --card-foreground: 224 71.4% 4.1%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 224 71.4% 4.1%;
-    --primary: 221 83% 53%;
+    --background: 240 10% 98%; /* Light gray */
+    --foreground: 240 10% 3.9%;
+    --card: 240 10% 98%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 240 10% 98%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 260 75% 55%; /* Lavender */
     --primary-foreground: 210 40% 98%;
-    --secondary: 220 14.3% 95.9%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 220 14.3% 95.9%;
-    --muted-foreground: 225.2 38.4% 42.2%;
-    --accent: 346.8 77.2% 49.8%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 221 83% 53%;
+    --secondary: 240 5% 90%;
+    --secondary-foreground: 240 5% 10%;
+    --muted: 240 5% 90%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 190 70% 50%; /* Cyan */
+    --accent-foreground: 240 10% 3.9%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 6% 88%;
+    --input: 240 6% 88%;
+    --ring: 260 75% 55%;
   }
 }
 
@@ -84,37 +84,40 @@
     background-repeat: no-repeat;
     animation: move 30s linear infinite;
     will-change: transform;
-    opacity: 0.7;
   }
 
   .dark .bg-lava-lamp::before {
-    background-image: radial-gradient(circle, hsl(var(--primary) / 0.2) 0%, transparent 40%),
-                      radial-gradient(circle, hsl(var(--accent) / 0.15) 50%, transparent 80%);
-    filter: blur(80px);
+    background-image: radial-gradient(circle, hsl(var(--primary) / 0.1) 0%, transparent 40%),
+                      radial-gradient(circle, hsl(var(--accent) / 0.08) 50%, transparent 80%);
+    filter: blur(100px);
+    opacity: 0.9;
   }
 
   .dark .bg-lava-lamp::after {
-    background-image: radial-gradient(circle, hsl(var(--primary) / 0.15) 20%, transparent 60%),
-                      radial-gradient(circle, hsl(var(--accent) / 0.2) 70%, transparent 95%);
+    background-image: radial-gradient(circle, hsl(var(--primary) / 0.08) 20%, transparent 60%),
+                      radial-gradient(circle, hsl(var(--accent) / 0.1) 70%, transparent 95%);
     animation-delay: -15s;
-    filter: blur(100px);
+    filter: blur(120px);
+    opacity: 0.9;
   }
 
   .light .bg-lava-lamp::before {
-    background-image: radial-gradient(circle, hsl(221 83% 53% / 0.15) 0%, transparent 40%), /* Light Blue */
-                      radial-gradient(circle, hsl(346 77% 49% / 0.1) 50%, transparent 80%);  /* Pink */
-    filter: blur(60px);
+    background-image: radial-gradient(circle, hsl(260 80% 60% / 0.12) 0%, transparent 40%),
+                      radial-gradient(circle, hsl(190 70% 50% / 0.1) 50%, transparent 80%);
+    filter: blur(80px);
+    opacity: 0.8;
   }
 
   .light .bg-lava-lamp::after {
-    background-image: radial-gradient(circle, hsl(260 80% 60% / 0.1) 20%, transparent 60%), /* Lavender */
-                      radial-gradient(circle, hsl(190 70% 50% / 0.15) 70%, transparent 95%); /* Cyan */
+     background-image: radial-gradient(circle, hsl(221 83% 53% / 0.1) 20%, transparent 60%),
+                       radial-gradient(circle, hsl(346 77% 49% / 0.08) 70%, transparent 95%);
     animation-delay: -15s;
-    filter: blur(80px);
+    filter: blur(100px);
+    opacity: 0.8;
   }
 
   .glassmorphism-card {
-    @apply bg-card/60 dark:bg-card/50 backdrop-blur-lg border border-white/10 shadow-2xl rounded-2xl;
+    @apply bg-card/60 dark:bg-card/50 backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl;
     animation: fadeIn 0.5s ease-out forwards;
   }
 
@@ -126,15 +129,15 @@
 
 @layer components {
   .cv-preview-container {
-      @apply bg-white p-8 shadow-lg;
-      color: #111827;
+      @apply bg-white p-6 shadow-lg;
+      color: #1a202c; /* Darker gray for better contrast */
       width: 210mm;
-      min-height: 297mm;
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      min-height: 297mm; /* A4 height */
+      font-family: 'Fira Sans', sans-serif;
   }
 
   .cv-grid {
-      @apply grid grid-cols-3 gap-8;
+      @apply grid grid-cols-3 gap-6;
   }
 
   .cv-main-col {
@@ -150,41 +153,52 @@
   }
 
   .cv-header h2 {
-      @apply text-xl font-light text-gray-600;
+      @apply text-lg font-light text-gray-500;
   }
 
   .cv-section-title {
-      @apply text-sm font-bold uppercase tracking-wider text-gray-500 pb-2 mb-2 border-b-2 border-gray-200;
+      @apply text-xs font-bold uppercase tracking-wider text-gray-500 pb-1.5 mb-3 border-b-2 border-gray-200 flex items-center gap-2;
   }
 
   .cv-profile-pic {
-      @apply w-32 h-32 rounded-full mx-auto mb-4 object-cover;
+      @apply w-28 h-28 rounded-full mx-auto mb-4 object-cover border-4 border-white shadow-md;
   }
   
   .cv-contact-item {
-      @apply flex items-center gap-2 text-sm text-gray-600 mb-1;
+      @apply flex items-center gap-2.5 text-xs text-gray-600 mb-1.5;
+  }
+  .cv-contact-item span {
+      @apply break-all;
   }
 
   .cv-skills-list {
-      @apply flex flex-wrap gap-2;
+      @apply flex flex-wrap gap-1.5;
   }
   .cv-skill-item {
-      @apply bg-gray-200 text-gray-700 text-xs font-medium px-2 py-1 rounded;
+      @apply bg-gray-100 text-gray-700 text-[10px] font-medium px-2 py-1 rounded-full;
   }
 
   .cv-exp-item, .cv-edu-item {
-      @apply mb-4;
+      @apply mb-3;
   }
 
   .cv-exp-title, .cv-edu-title {
-      @apply text-base font-semibold text-gray-800;
+      @apply text-sm font-semibold text-gray-800;
   }
 
   .cv-exp-subtitle, .cv-edu-subtitle {
-      @apply text-sm text-gray-600;
+      @apply text-xs text-gray-500;
   }
 
   .cv-exp-desc {
-      @apply text-sm text-gray-700 mt-1;
+      @apply text-xs text-gray-600 mt-1;
+  }
+
+  .cv-text-sm {
+      @apply text-sm text-gray-700;
+  }
+
+  .cv-text-xs {
+       @apply text-xs text-gray-700;
   }
 }
