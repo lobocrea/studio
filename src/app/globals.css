@@ -83,11 +83,13 @@
     height: 200%;
     background-repeat: no-repeat;
     animation: move 25s linear infinite;
+    will-change: transform; /* Performance hint for animation */
   }
 
   .bg-lava-lamp::before {
     background-image: radial-gradient(circle, hsl(var(--primary) / 0.3) 0%, transparent 40%),
                       radial-gradient(circle, hsl(var(--accent) / 0.2) 50%, transparent 80%);
+    filter: blur(40px); /* Add blur for a softer, fluid look */
     
   }
 
@@ -95,6 +97,7 @@
     background-image: radial-gradient(circle, hsl(var(--primary) / 0.2) 20%, transparent 60%),
                       radial-gradient(circle, hsl(var(--accent) / 0.3) 70%, transparent 95%);
     animation-delay: -12.5s;
+    filter: blur(60px); /* Add more blur for the second layer */
   }
 
   .glassmorphism-card {
