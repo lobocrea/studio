@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import React from 'react';
 import { supabase } from '@/lib/supabase-client';
 import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,12 +32,12 @@ export default function LoginPage() {
           title: "¡Revisa tu correo!",
           description: "Hemos enviado un enlace de confirmación a tu email.",
         });
-        // Stay on the page, maybe switch to login view
         setIsSignUp(false);
       } else {
         // Sign In
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        // No toast on successful login, direct redirect is better UX
         router.push('/dashboard');
       }
     } catch (error: any) {
@@ -94,6 +95,7 @@ export default function LoginPage() {
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
               <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isSubmitting ? 'Procesando...' : (isSignUp ? 'Registrarse' : 'Iniciar Sesión')}
               </Button>
               <Button
