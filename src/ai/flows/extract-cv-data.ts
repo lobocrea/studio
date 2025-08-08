@@ -16,7 +16,7 @@ const ExtractCvDataInputSchema = z.object({
   pdfDataUri: z
     .string()
     .describe(
-      "A CV in PDF format, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "A CV in PDF format, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'"
     ),
 });
 export type ExtractCvDataInput = z.infer<typeof ExtractCvDataInputSchema>;
@@ -42,7 +42,7 @@ const prompt = ai.definePrompt({
   name: 'extractCvDataPrompt',
   input: {schema: ExtractCvDataInputSchema},
   output: {schema: ExtractCvDataOutputSchema},
-  model: googleAI.model('gemini-2.5-pro-preview'),
+  model: googleAI.model('gemini-2.5-pro'),
   prompt: `You are an expert in extracting data from CVs and summarizing it for the Spanish job market.
 
   Read the content of the CV and extract the following information:
