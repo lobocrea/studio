@@ -9,7 +9,7 @@ services:
       - ./:/usr/src/app
     command: sh -c "npm install && npm run build && npm start"
     ports:
-      - "3000:3000"
+      - "3003:3000"
     environment:
       - NODE_ENV=production
     restart: unless-stopped
