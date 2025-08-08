@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 
 const GenerateOptimizedCvInputSchema = z.object({
   extractedData: z.string().describe('The extracted CV data in JSON format.'),
@@ -66,6 +67,7 @@ const prompt = ai.definePrompt({
     style: z.enum(['Minimalist', 'Modern', 'Classic']),
   })},
   output: {schema: GenerateOptimizedCvOutputSchema},
+  model: googleAI.model('gemini-2.5-pro-preview'),
   prompt: `You are an AI expert in creating optimized CVs for the Spanish job market.
 
   Based on the extracted data, contact information, and the chosen style, generate a new CV.

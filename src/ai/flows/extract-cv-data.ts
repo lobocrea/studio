@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import {googleAI} from '@genkit-ai/googleai';
 
 const ExtractCvDataInputSchema = z.object({
   pdfDataUri: z
@@ -41,6 +42,7 @@ const prompt = ai.definePrompt({
   name: 'extractCvDataPrompt',
   input: {schema: ExtractCvDataInputSchema},
   output: {schema: ExtractCvDataOutputSchema},
+  model: googleAI.model('gemini-2.5-pro-preview'),
   prompt: `You are an expert in extracting data from CVs and summarizing it for the Spanish job market.
 
   Read the content of the CV and extract the following information:
