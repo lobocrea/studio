@@ -66,6 +66,7 @@ const prompt = ai.definePrompt({
     style: z.enum(['Minimalist', 'Modern', 'Classic']),
   })},
   output: {schema: GenerateOptimizedCvOutputSchema},
+  model: 'gemini-1.5-flash',
   prompt: `You are an AI expert in creating optimized CVs for the Spanish job market.
 
   Based on the extracted data, contact information, and the chosen style, generate a new CV.
