@@ -2,10 +2,11 @@
 
 import { extractCvData, type ExtractCvDataOutput } from '@/ai/flows/extract-cv-data';
 import { generateOptimizedCv, type GenerateOptimizedCvOutput } from '@/ai/flows/generate-optimized-cv';
+import { saveCvData } from '@/ai/flows/save-cv-data';
 import { zodResolver } from '@hookform/resolvers/zod';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { Download, FileText, Globe, Linkedin, Loader2, Mail, MapPin, Phone, UploadCloud, Wand2, X, Briefcase, GraduationCap, Star, Award, Languages } from 'lucide-react';
+import { Download, FileText, Globe, Linkedin, Loader2, Mail, MapPin, Phone, UploadCloud, Wand2, X, Briefcase, GraduationCap, Star, Award, Languages, Save } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -20,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { LoadingState } from './loading-state';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase-client';
+import { useToast } from '@/hooks/use-toast';
 
 type Step = 'upload' | 'extracting' | 'preview' | 'generating' | 'result';
 type CVStyle = 'Minimalist' | 'Modern' | 'Classic';
@@ -66,6 +68,7 @@ export function CvOptimizer() {
   const [step, setStep] = useState<Step>('upload');
   const [error, setError] = useState<string | null>(null);
   const [optimizedCv, setOptimizedCv] = useState<GenerateOptimizedCvOutput | null>(null);
+  const [currentStyle, setCurrentStyle] = useState<CVStyle>('Modern');
   const [fullName, setFullName] = useState<string>('');
   const [profilePicUrl, setProfilePicUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>('cv-optimizado');
@@ -73,7 +76,9 @@ export function CvOptimizer() {
   const profilePicInputRef = useRef<HTMLInputElement>(null);
   const cvPreviewRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -122,6 +127,7 @@ export function CvOptimizer() {
     setStep('generating');
     setError(null);
     setFullName(values.fullName);
+    setCurrentStyle(values.style);
     setFileName(values.fullName.trim().replace(/\s+/g, '-').toLowerCase());
     
     const extractedData = {
@@ -159,49 +165,92 @@ export function CvOptimizer() {
     }
   };
   
-const handleDownloadPdf = async () => {
-    if (!cvPreviewRef.current) return;
-    setIsDownloading(true);
+  const handleDownloadPdf = async () => {
+      if (!cvPreviewRef.current) return;
+      setIsDownloading(true);
+      try {
+          const canvas = await html2canvas(cvPreviewRef.current, {
+              scale: 3,
+              useCORS: true,
+              backgroundColor: '#ffffff',
+              windowWidth: cvPreviewRef.current.scrollWidth,
+              windowHeight: cvPreviewRef.current.scrollHeight,
+          });
+
+          const imgData = canvas.toDataURL('image/png', 1.0);
+          const pdf = new jsPDF('p', 'mm', 'a4', true);
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = pdf.internal.pageSize.getHeight();
+          
+          const canvasWidth = canvas.width;
+          const canvasHeight = canvas.height;
+          const ratio = canvasWidth / pdfWidth;
+          const imgHeight = canvasHeight / ratio;
+
+          let heightLeft = imgHeight;
+          let position = 0;
+
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+          heightLeft -= pdfHeight;
+
+          while (heightLeft > 0) {
+              position = heightLeft - imgHeight;
+              pdf.addPage();
+              pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
+              heightLeft -= pdfHeight;
+          }
+
+          pdf.save(`${fileName || 'cv-optimizado'}.pdf`);
+      } catch (e) {
+          console.error("Error generating PDF:", e);
+          setError("Error al generar el PDF. Por favor, intente de nuevo.");
+      } finally {
+          setIsDownloading(false);
+      }
+  };
+
+  const handleSaveCv = async () => {
+    if (!optimizedCv) return;
+    setIsSaving(true);
     try {
-        const canvas = await html2canvas(cvPreviewRef.current, {
-            scale: 3,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            windowWidth: cvPreviewRef.current.scrollWidth,
-            windowHeight: cvPreviewRef.current.scrollHeight,
-        });
+      const workerData = {
+        full_name: fullName,
+        email: optimizedCv.contacto.email,
+        phone: optimizedCv.contacto.telefono,
+        location: optimizedCv.contacto.ubicacion,
+        linkedin_url: optimizedCv.contacto.linkedin,
+        website_url: optimizedCv.contacto.sitio_web,
+        profile_pic_url: profilePicUrl,
+      };
 
-        const imgData = canvas.toDataURL('image/png', 1.0);
-        const pdf = new jsPDF('p', 'mm', 'a4', true);
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        const ratio = canvasWidth / pdfWidth;
-        const imgHeight = canvasHeight / ratio;
-
-        let heightLeft = imgHeight;
-        let position = 0;
-
-        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
-        heightLeft -= pdfHeight;
-
-        while (heightLeft > 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
-            heightLeft -= pdfHeight;
-        }
-
-        pdf.save(`${fileName || 'cv-optimizado'}.pdf`);
-    } catch (e) {
-        console.error("Error generating PDF:", e);
-        setError("Error al generar el PDF. Por favor, intente de nuevo.");
+      const cvData = {
+        title: optimizedCv.title,
+        professional_summary: optimizedCv.resumen_profesional,
+        work_experience: optimizedCv.experiencia_laboral,
+        academic_background: optimizedCv.formacion_academica,
+        skills: optimizedCv.habilidades,
+        languages: optimizedCv.idiomas,
+        certifications: optimizedCv.certificaciones,
+        contact_info: optimizedCv.contacto,
+        style: currentStyle,
+      };
+      
+      await saveCvData({ workerData, cvData });
+      toast({
+        title: '¡CV Guardado!',
+        description: 'Tu nuevo CV ha sido guardado en tu perfil.',
+      });
+    } catch (error) {
+      console.error("Error saving CV:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Error al Guardar',
+        description: 'No se pudo guardar el CV. Por favor, inténtalo de nuevo.',
+      });
     } finally {
-        setIsDownloading(false);
+      setIsSaving(false);
     }
-};
+  };
 
   const startOver = () => {
     setStep('upload');
@@ -370,6 +419,10 @@ const handleDownloadPdf = async () => {
                         <CardDescription>Descárgalo en formato PDF. ¡Mucha suerte en tu búsqueda!</CardDescription>
                     </div>
                     <div className="flex gap-2 w-full md:w-auto">
+                        <Button onClick={handleSaveCv} className="w-full md:w-auto" disabled={isSaving}>
+                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            Guardar
+                        </Button>
                         <Button onClick={handleDownloadPdf} className="w-full md:w-auto" disabled={isDownloading}>
                             {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                             PDF
