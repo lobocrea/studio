@@ -46,7 +46,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const getInitialFormValues = (cvData?: Partial<ExtractCvDataOutput & FormValues>): FormValues => ({
+const getInitialFormValues = (cvData?: Partial<ExtractCvDataOutput & { email?: string; linkedin?: string; sitio_web?: string }>): FormValues => ({
   fullName: cvData?.fullName || '',
   style: 'Modern',
   resumen_profesional: cvData?.resumen_profesional || '',
@@ -76,7 +76,7 @@ export function CvOptimizer() {
   const profilePicInputRef = useRef<HTMLInputElement>(null);
   const cvPreviewRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -124,6 +124,7 @@ export function CvOptimizer() {
   };
   
   const handleGenerateSubmit = async (values: FormValues) => {
+    setIsGenerating(true);
     setStep('generating');
     setError(null);
     setFullName(values.fullName);
@@ -148,20 +149,53 @@ export function CvOptimizer() {
       ubicacion: values.ubicacion,
       linkedin: values.linkedin,
       sitio_web: values.sitio_web,
-    }
+    };
 
     try {
-        const result = await generateOptimizedCv({ 
-          extractedData: JSON.stringify(extractedData),
-          contactData: contactData,
-          style: values.style 
-        });
-        setOptimizedCv(result);
-        setStep('result');
+      // First, save the data to Supabase
+      const workerData = {
+        full_name: values.fullName,
+        email: values.email,
+        phone: values.telefono,
+        location: values.ubicacion,
+        linkedin_url: values.linkedin,
+        website_url: values.sitio_web,
+        profile_pic_url: profilePicUrl,
+      };
+
+      const cvDataToSave = {
+        title: '', // This will be generated later
+        professional_summary: values.resumen_profesional,
+        work_experience: extractedData.experiencia_laboral,
+        academic_background: extractedData.formacion_academica,
+        skills: extractedData.habilidades,
+        languages: extractedData.idiomas,
+        certifications: extractedData.certificaciones,
+        contact_info: contactData,
+        style: values.style,
+      };
+
+      await saveCvData({ workerData, cvData: cvDataToSave });
+      toast({
+        title: '¡Información Guardada!',
+        description: 'Tus datos han sido guardados. Ahora, generando tu CV optimizado...',
+      });
+
+      // Now, generate the optimized CV
+      const result = await generateOptimizedCv({ 
+        extractedData: JSON.stringify(extractedData),
+        contactData: contactData,
+        style: values.style 
+      });
+      setOptimizedCv(result);
+      setStep('result');
     } catch(e) {
-        console.error(e);
-        setError('No se pudo generar el CV optimizado. Por favor, intente nuevamente.');
-        setStep('preview');
+      console.error(e);
+      const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
+      setError(`No se pudo generar o guardar el CV: ${errorMessage}`);
+      setStep('preview');
+    } finally {
+      setIsGenerating(false);
     }
   };
   
@@ -209,49 +243,6 @@ export function CvOptimizer() {
       }
   };
 
-  const handleSaveCv = async () => {
-    if (!optimizedCv) return;
-    setIsSaving(true);
-    try {
-      const workerData = {
-        full_name: fullName,
-        email: optimizedCv.contacto.email,
-        phone: optimizedCv.contacto.telefono,
-        location: optimizedCv.contacto.ubicacion,
-        linkedin_url: optimizedCv.contacto.linkedin,
-        website_url: optimizedCv.contacto.sitio_web,
-        profile_pic_url: profilePicUrl,
-      };
-
-      const cvData = {
-        title: optimizedCv.title,
-        professional_summary: optimizedCv.resumen_profesional,
-        work_experience: optimizedCv.experiencia_laboral,
-        academic_background: optimizedCv.formacion_academica,
-        skills: optimizedCv.habilidades,
-        languages: optimizedCv.idiomas,
-        certifications: optimizedCv.certificaciones,
-        contact_info: optimizedCv.contacto,
-        style: currentStyle,
-      };
-      
-      await saveCvData({ workerData, cvData });
-      toast({
-        title: '¡CV Guardado!',
-        description: 'Tu nuevo CV ha sido guardado en tu perfil.',
-      });
-    } catch (error) {
-      console.error("Error saving CV:", error);
-      toast({
-        variant: 'destructive',
-        title: 'Error al Guardar',
-        description: 'No se pudo guardar el CV. Por favor, inténtalo de nuevo.',
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const startOver = () => {
     setStep('upload');
     setError(null);
@@ -279,7 +270,7 @@ export function CvOptimizer() {
   }
 
   if (step === 'extracting') return <LoadingState text="Extrayendo datos de tu CV..." />;
-  if (step === 'generating') return <LoadingState text="Generando tu nuevo CV optimizado..." />;
+  if (step === 'generating') return <LoadingState text="Guardando y generando tu nuevo CV..." />;
 
   return (
     <div className="w-full">
@@ -399,9 +390,9 @@ export function CvOptimizer() {
 
                 <CardFooter className="flex justify-end gap-4 p-0 pt-6">
                     <Button type="button" variant="outline" onClick={startOver}>Cancelar</Button>
-                    <Button type="submit">
-                        <Wand2 className="mr-2 h-4 w-4" />
-                        Generar CV Optimizado
+                    <Button type="submit" disabled={isGenerating}>
+                        {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                        {isGenerating ? 'Guardando y Generando...' : 'Generar CV Optimizado'}
                     </Button>
                 </CardFooter>
               </form>
@@ -419,10 +410,6 @@ export function CvOptimizer() {
                         <CardDescription>Descárgalo en formato PDF. ¡Mucha suerte en tu búsqueda!</CardDescription>
                     </div>
                     <div className="flex gap-2 w-full md:w-auto">
-                        <Button onClick={handleSaveCv} className="w-full md:w-auto" disabled={isSaving}>
-                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            Guardar
-                        </Button>
                         <Button onClick={handleDownloadPdf} className="w-full md:w-auto" disabled={isDownloading}>
                             {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                             PDF

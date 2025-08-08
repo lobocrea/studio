@@ -22,6 +22,9 @@ const ExtractCvDataInputSchema = z.object({
 export type ExtractCvDataInput = z.infer<typeof ExtractCvDataInputSchema>;
 
 const ExtractCvDataOutputSchema = z.object({
+  fullName: z.string().describe('The full name of the candidate.'),
+  telefono: z.string().optional().describe('The phone number of the candidate.'),
+  ubicacion: z.string().optional().describe('The location (city, country) of the candidate.'),
   resumen_profesional: z.string().describe('Professional summary.'),
   experiencia_laboral: z.array(z.string()).describe('Work experience.'),
   formacion_academica: z.array(z.string()).describe('Academic background.'),
@@ -46,28 +49,19 @@ const prompt = ai.definePrompt({
   prompt: `You are an expert in extracting data from CVs and summarizing it for the Spanish job market.
 
   Read the content of the CV and extract the following information:
-
-  - Resumen profesional (replace \"Perfil profesional\" with Resumen profesional).
+  - Full Name (fullName).
+  - Phone Number (telefono).
+  - Location (ubicacion).
+  - Resumen profesional (replace "Perfil profesional" with Resumen profesional).
   - Experiencia laboral.
   - Formación académica.
   - Habilidades (técnicas y blandas).
   - Idiomas.
   - Certificaciones.
 
-  Summarize each section to ensure the content does not exceed the equivalent of two A4 pages.
+  Summarize each section to ensure the content is concise and well-organized. The total length should not exceed the equivalent of two A4 pages.
 
-  Return the data in a JSON object with the following structure:
-  {
-    \"resumen_profesional\": \"...\",
-    \"experiencia_laboral\": [...],
-    \"formacion_academica\": [...],
-    \"habilidades\": {
-      \"tecnicas\": [...],
-      \"blandas\": [...]
-    },
-    \"idiomas\": [...],
-    \"certificaciones\": [...]
-  }
+  Return the data in a JSON object with the specified structure.
 
   CV Content: {{media url=pdfDataUri}}
   `,
