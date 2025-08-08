@@ -3,14 +3,13 @@ import type {NextConfig} from 'next';
 const nextConfig: NextConfig = {
   output: 'standalone',
 
-  /* // HEMOS DESACTIVADO ESTO TEMPORALMENTE PARA VER LOS ERRORES REALES
+  // Deshabilitamos temporalmente para producción debido a problemas con genkit
   typescript: {
     ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
   },
-  */
 
   images: {
     remotePatterns: [

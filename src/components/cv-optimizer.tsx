@@ -43,7 +43,7 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const getInitialFormValues = (cvData?: Partial<ExtractCvDataOutput & FormValues>): FormValues => ({
+const getInitialFormValues = (cvData?: Partial<ExtractCvDataOutput> & Partial<FormValues>): FormValues => ({
   fullName: cvData?.fullName || '',
   style: 'Modern',
   resumen_profesional: cvData?.resumen_profesional || '',
