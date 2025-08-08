@@ -7,21 +7,46 @@ import { Label } from '@/components/ui/label';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useRouter } from 'next/navigation';
 import React from 'react';
+import { supabase } from '@/lib/supabase-client';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isSignUp, setIsSignUp] = React.useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Dummy login: just check if fields are not empty
-    if (email && password) {
-      // In a real app, you'd perform authentication and store a token.
-      // For now, we'll just redirect.
-      router.push('/dashboard');
-    } else {
-      alert('Por favor, introduce tu email y contraseña.');
+    setIsSubmitting(true);
+
+    try {
+      if (isSignUp) {
+        // Sign Up
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        toast({
+          title: "¡Revisa tu correo!",
+          description: "Hemos enviado un enlace de confirmación a tu email.",
+        });
+        // Stay on the page, maybe switch to login view
+        setIsSignUp(false);
+      } else {
+        // Sign In
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        router.push('/dashboard');
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error de autenticación',
+        description: error.error_description || error.message,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -33,10 +58,14 @@ export default function LoginPage() {
       <div className="w-full max-w-md mx-auto z-10">
         <Card className="glassmorphism-card">
           <CardHeader className="text-center">
-            <CardTitle className="font-headline text-3xl">Bienvenido de Nuevo</CardTitle>
-            <CardDescription>Inicia sesión para optimizar tu CV</CardDescription>
+            <CardTitle className="font-headline text-3xl">
+              {isSignUp ? 'Crea tu Cuenta' : 'Bienvenido de Nuevo'}
+            </CardTitle>
+            <CardDescription>
+              {isSignUp ? 'Regístrate para empezar a optimizar tu CV.' : 'Inicia sesión para continuar.'}
+            </CardDescription>
           </CardHeader>
-          <form onSubmit={handleLogin}>
+          <form onSubmit={handleAuthAction}>
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -47,26 +76,35 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={isSubmitting}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Contraseña</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
+                <Input
+                  id="password"
+                  type="password"
                   placeholder="********"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required 
+                  required
+                  disabled={isSubmitting}
                 />
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              <Button type="submit" className="w-full">
-                Iniciar Sesión
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? 'Procesando...' : (isSignUp ? 'Registrarse' : 'Iniciar Sesión')}
               </Button>
-              <Button variant="link" size="sm" className="text-muted-foreground">
-                ¿No tienes una cuenta? Regístrate
+              <Button
+                variant="link"
+                size="sm"
+                className="text-muted-foreground"
+                type="button"
+                onClick={() => setIsSignUp(!isSignUp)}
+                disabled={isSubmitting}
+              >
+                {isSignUp ? '¿Ya tienes una cuenta? Inicia Sesión' : '¿No tienes una cuenta? Regístrate'}
               </Button>
             </CardFooter>
           </form>

@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingState } from './loading-state';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase-client';
 
 type Step = 'upload' | 'extracting' | 'preview' | 'generating' | 'result';
 type CVStyle = 'Minimalist' | 'Modern' | 'Classic';
@@ -210,8 +211,8 @@ const handleDownloadPdf = async () => {
     form.reset(getInitialFormValues());
   };
   
-  const handleLogout = () => {
-    // In a real app, you'd clear tokens and state.
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     router.push('/');
   };
 
