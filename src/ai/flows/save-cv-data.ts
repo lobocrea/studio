@@ -8,7 +8,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { supabase } from '@/lib/supabase-client';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { z } from 'genkit';
 
 // Define the schema for worker data
@@ -54,6 +54,7 @@ const saveCvDataFlow = ai.defineFlow(
     outputSchema: z.object({ success: z.boolean() }),
   },
   async ({ workerData, cvData }) => {
+    const supabase = await createSupabaseServerClient();
     // 1. Get the current authenticated user from Supabase Auth
     const { data: { user } } = await supabase.auth.getUser();
     
