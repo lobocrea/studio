@@ -163,7 +163,6 @@ export function CvOptimizer() {
         profile_pic_url: profilePicUrl,
       };
       
-      // We now save the structured, AI-generated data
       const cvDataToSave = {
         title: result.title,
         professional_summary: result.resumen_profesional,
@@ -171,20 +170,24 @@ export function CvOptimizer() {
         academic_background: result.formacion_academica,
         skills: result.habilidades,
         languages: result.idiomas,
-        certifications: result.certificaciones,
+        certificaciones: result.certificaciones,
         contact_info: result.contacto,
         style: values.style,
       };
       
-      await saveCvData({ workerData: workerDataToSave, cvData: cvDataToSave });
+      const { success, cvId } = await saveCvData({ workerData: workerDataToSave, cvData: cvDataToSave });
 
-      toast({
-        title: '¡CV Guardado y Optimizado!',
-        description: 'Hemos guardado y generado tu nuevo CV con éxito.',
-      });
+      if (success) {
+        toast({
+          title: '¡CV Guardado y Optimizado!',
+          description: 'Hemos guardado y generado tu nuevo CV con éxito.',
+        });
+        // Redirect to the jobs page after successful generation
+        router.push('/dashboard/jobs');
+      } else {
+        throw new Error('Save operation failed silently.');
+      }
 
-      // Redirect to the jobs page after successful generation
-      router.push('/dashboard/jobs');
 
     } catch(e) {
       console.error(e);

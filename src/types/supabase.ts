@@ -62,6 +62,48 @@ export type Database = {
           },
         ]
       }
+      skills: {
+        Row: {
+          created_at: string
+          cv_id: number
+          id: number
+          skill_name: string
+          skill_type: string
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string
+          cv_id: number
+          id?: number
+          skill_name: string
+          skill_type: string
+          worker_id: string
+        }
+        Update: {
+          created_at?: string
+          cv_id?: number
+          id?: number
+          skill_name?: string
+          skill_type?: string
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "skills_cv_id_fkey"
+            columns: ["cv_id"]
+            isOneToOne: false
+            referencedRelation: "cvs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "skills_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workers: {
         Row: {
           created_at: string

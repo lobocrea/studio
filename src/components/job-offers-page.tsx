@@ -30,17 +30,12 @@ export function JobOffersPage({ cvData }: JobOffersProps) {
     setError(null);
 
     try {
-      // Safely extract and format data from the CV for a focused search
-      const skills = (cvData.skills as any)?.tecnicas || [];
-      const experienceTitles = ((cvData.work_experience || []) as any[]).map(e => e.puesto || '');
-      const educationTitles = ((cvData.academic_background || []) as any[]).map(e => e.titulo || '');
-      const location = (cvData.contact_info as any)?.ubicacion || '';
+      if (!cvData?.id) {
+        throw new Error("CV data is not available.");
+      }
 
       const jobInput = {
-        skills,
-        experience: experienceTitles,
-        education: educationTitles,
-        location,
+        cvId: cvData.id,
         page: 1, // We always fetch page 1
         limit: limit, // But we increase the limit
       };

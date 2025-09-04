@@ -10,6 +10,7 @@
  */
 
 import { ai } from '@/ai/genkit';
+import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { z } from 'genkit';
 
 const JobOfferSchema = z.object({
@@ -26,10 +27,7 @@ const JobOfferSchema = z.object({
 export type JobOffer = z.infer<typeof JobOfferSchema>;
 
 const FindJobOffersInputSchema = z.object({
-  skills: z.array(z.string()).describe("A list of the user's technical skills."),
-  experience: z.array(z.string()).describe("A list of the user's work experiences (titles)."),
-  education: z.array(z.string()).describe("A list of the user's academic background (titles)."),
-  location: z.string().optional().describe('The user\'s location (e.g., "Madrid, Spain").'),
+  cvId: z.number().describe("The ID of the CV to base the job search on."),
   page: z.number().optional().default(1),
   limit: z.number().optional().default(3),
 });
@@ -46,37 +44,55 @@ const findJobOffersFlow = ai.defineFlow(
     outputSchema: z.array(JobOfferSchema),
   },
   async (input) => {
+    const supabase = await createSupabaseServerClient();
+    
+    // 1. Fetch the user and their skills and location from the latest CV
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error('User not authenticated.');
+    }
+
+    const { data: cvData, error: cvError } = await supabase
+        .from('cvs')
+        .select('contact_info')
+        .eq('id', input.cvId)
+        .single();
+    
+    const { data: skillsData, error: skillsError } = await supabase
+        .from('skills')
+        .select('skill_name')
+        .eq('cv_id', input.cvId)
+        .eq('skill_type', 'tecnica');
+
+    if (cvError || skillsError) {
+        console.error('Error fetching CV or skills data:', cvError || skillsError);
+        throw new Error('Could not fetch user data to find jobs.');
+    }
+    
+    const location = (cvData?.contact_info as any)?.ubicacion || '';
+    const skills = skillsData?.map(s => s.skill_name) || [];
+    
+    // 2. Call the TheirStack API
     const apiKey = process.env.THEIR_STACK_API_KEY;
     if (!apiKey) {
       throw new Error('THEIR_STACK_API_KEY is not configured.');
     }
     
-    // Extract the country code from the location string (e.g., "Madrid, ES" -> "ES")
-    const countryCode = input.location?.split(',').pop()?.trim().toUpperCase();
-
-    // Construct a focused query string
-    const searchTerms = [
-        ...input.skills, 
-        ...input.experience, 
-        ...input.education
-    ].filter(Boolean).join(' ');
-
+    const countryCode = location?.split(',').pop()?.trim().toUpperCase();
+    const searchTerms = skills.join(' ');
 
     const requestBody: any = {
-        // The page in the API is 0-indexed, so we subtract 1.
         page: (input.page ?? 1) - 1,
         limit: input.limit,
-        posted_at_max_age_days: 60, // Look for jobs posted in the last 60 days
+        posted_at_max_age_days: 60,
         order_by: [{ field: "date_posted", desc: true }],
         job_country_code_or: countryCode ? [countryCode] : undefined,
         include_total_results: false,
     };
     
-    // Only add the query if there are terms to search for
     if (searchTerms) {
         requestBody.query_and = [searchTerms];
     }
-
 
     try {
         const response = await fetch(`https://api.theirstack.com/v1/jobs/search`, {

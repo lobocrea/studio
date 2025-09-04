@@ -63,7 +63,7 @@ const SaveCvDataInputSchema = z.object({
 export type SaveCvDataInput = z.infer<typeof SaveCvDataInputSchema>;
 
 // Exported async function to be called from the client
-export async function saveCvData(input: SaveCvDataInput): Promise<{ success: boolean }> {
+export async function saveCvData(input: SaveCvDataInput): Promise<{ success: boolean, cvId?: number }> {
   return saveCvDataFlow(input);
 }
 
@@ -71,7 +71,7 @@ const saveCvDataFlow = ai.defineFlow(
   {
     name: 'saveCvDataFlow',
     inputSchema: SaveCvDataInputSchema,
-    outputSchema: z.object({ success: z.boolean() }),
+    outputSchema: z.object({ success: z.boolean(), cvId: z.number().optional() }),
   },
   async ({ workerData, cvData }) => {
     const supabase = await createSupabaseServerClient();
@@ -97,31 +97,60 @@ const saveCvDataFlow = ai.defineFlow(
       throw new Error(`Failed to save worker data: ${workerError.message}`);
     }
 
-    // 3. Upsert CV data
+    // 3. Upsert CV data and get the ID
     const { id: cvId, ...cvDataToSave } = cvData;
-
     const upsertData: any = {
         ...cvDataToSave,
         worker_id: userId,
     };
-    
-    // If cvId exists, we are updating an existing record.
     if (cvId) {
         upsertData.id = cvId;
     }
 
-    const { error: cvError } = await supabase
+    const { data: savedCv, error: cvError } = await supabase
       .from('cvs')
-      .upsert(upsertData);
+      .upsert(upsertData)
+      .select('id')
+      .single();
 
-
-    if (cvError) {
+    if (cvError || !savedCv) {
       console.error('Error saving CV data:', cvError);
-      throw new Error(`Failed to save CV data: ${cvError.message}`);
+      throw new Error(`Failed to save CV data: ${cvError?.message || 'No data returned'}`);
+    }
+    
+    const newCvId = savedCv.id;
+
+    // 4. Clear old skills for this CV and insert new ones
+    const { error: deleteError } = await supabase.from('skills').delete().eq('cv_id', newCvId);
+    if (deleteError) {
+        console.error('Error deleting old skills:', deleteError);
+        // Not throwing error, as it might not be critical, but logging it.
+    }
+    
+    const skillsToInsert = [
+        ...(cvData.skills.tecnicas || []).map(skill => ({
+            worker_id: userId,
+            cv_id: newCvId,
+            skill_name: skill,
+            skill_type: 'tecnica'
+        })),
+        ...(cvData.skills.blandas || []).map(skill => ({
+            worker_id: userId,
+            cv_id: newCvId,
+            skill_name: skill,
+            skill_type: 'blanda'
+        }))
+    ];
+
+    if (skillsToInsert.length > 0) {
+        const { error: skillsError } = await supabase.from('skills').insert(skillsToInsert);
+        if (skillsError) {
+            console.error('Error saving skills:', skillsError);
+            throw new Error(`Failed to save skills: ${skillsError.message}`);
+        }
     }
 
-    return { success: true };
+
+    return { success: true, cvId: newCvId };
   }
 );
-
-    

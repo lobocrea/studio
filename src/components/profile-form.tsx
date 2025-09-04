@@ -230,5 +230,3 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
         </Card>
     );
 }
-
-    
