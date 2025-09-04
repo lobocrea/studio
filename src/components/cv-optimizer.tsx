@@ -20,8 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingState } from './loading-state';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase-client';
 import { useToast } from '@/hooks/use-toast';
+import { createSupabaseBrowserClient } from '@/lib/supabase-client';
 
 type Step = 'upload' | 'extracting' | 'preview' | 'generating' | 'result';
 type CVStyle = 'Minimalist' | 'Modern' | 'Classic';
@@ -79,6 +79,7 @@ export function CvOptimizer() {
   const [isGenerating, setIsGenerating] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const supabase = createSupabaseBrowserClient();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -253,7 +254,7 @@ export function CvOptimizer() {
   
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/');
+    router.refresh();
   };
 
   if (error) {

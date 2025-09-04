@@ -1,29 +1,79 @@
 'use server';
 
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 import type { Database } from '@/types/supabase';
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
+  let response = NextResponse.next({
+    request: {
+      headers: req.headers,
+    },
+  });
 
-  // Crea un cliente de Supabase para el middleware.
-  // El cliente se encargará de refrescar los tokens de autenticación si es necesario.
-  const supabase = createMiddlewareClient<Database>({ req, res });
+  const supabase = createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return req.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          req.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: req.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          });
+        },
+        remove(name: string, options: CookieOptions) {
+          req.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+          response = NextResponse.next({
+            request: {
+              headers: req.headers,
+            },
+          });
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          });
+        },
+      },
+    }
+  );
+
   const {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // Si no hay sesión y el usuario intenta acceder al dashboard,
-  // se le redirige a la página de inicio.
-  if (!session && req.nextUrl.pathname.startsWith('/dashboard')) {
-    const url = new URL(req.url);
-    url.pathname = '/';
-    return NextResponse.redirect(url);
+  const { pathname } = req.nextUrl;
+
+  // If user is logged in and tries to access login page, redirect to dashboard
+  if (session && pathname === '/') {
+    return NextResponse.redirect(new URL('/dashboard', req.url));
   }
 
-  return res;
+  // If user is not logged in and tries to access a protected route, redirect to login
+  if (!session && pathname.startsWith('/dashboard')) {
+    return NextResponse.redirect(new URL('/', req.url));
+  }
+
+  return response;
 }
 
 export const config = {

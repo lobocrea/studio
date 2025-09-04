@@ -7,9 +7,9 @@ import { Label } from '@/components/ui/label';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { useRouter } from 'next/navigation';
 import React from 'react';
-import { supabase } from '@/lib/supabase-client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { createSupabaseBrowserClient } from '@/lib/supabase-client';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,6 +18,9 @@ export default function LoginPage() {
   const [password, setPassword] = React.useState('');
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSignUp, setIsSignUp] = React.useState(false);
+  
+  // Use the browser client
+  const supabase = createSupabaseBrowserClient();
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +29,14 @@ export default function LoginPage() {
     try {
       if (isSignUp) {
         // Sign Up
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            // If you want to send a confirmation email
+            emailRedirectTo: `${location.origin}/auth/callback`,
+          }
+        });
         if (error) throw error;
         toast({
           title: "¡Revisa tu correo!",
@@ -37,8 +47,9 @@ export default function LoginPage() {
         // Sign In
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        // No toast on successful login, direct redirect is better UX
-        router.push('/dashboard');
+        // The middleware will handle the redirect on navigation, 
+        // so we just need to refresh the page to trigger it.
+        router.refresh(); 
       }
     } catch (error: any) {
       toast({
