@@ -9,7 +9,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -104,7 +104,7 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
                     blandas: values.habilidades_blandas.split(',').map(s => s.trim()).filter(Boolean),
                 },
                 languages: values.idiomas.split(',').map(s => s.trim()).filter(Boolean),
-                certifications: values.certificaciones.split(',').map(s => s.trim()).filter(Boolean),
+                certificaciones: values.certificaciones.split(',').map(s => s.trim()).filter(Boolean),
                 contact_info: {
                     email: values.email || '',
                     telefono: values.telefono || '',
@@ -135,7 +135,7 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
             const finalCvData = {
                 ...cvData,
                 work_experience: generatedResult.experiencia_laboral,
-                academic_background: generatedResult.formacion_academica,
+                academic_background: generatedResult.academic_background,
             };
 
             await saveCvData({ workerData, cvData: finalCvData });
@@ -177,7 +177,7 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
                                     <FormItem><FormLabel>Ubicación</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField control={form.control} name="linkedin" render={({ field }) => (
-                                    <FormItem><FormLabel>Perfil de LinkedIn</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Perfil de LinkedIn</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></Item>
                                 )} />
                                 <FormField control={form.control} name="sitio_web" render={({ field }) => (
                                     <FormItem><FormLabel>Sitio Web / Portfolio (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -226,3 +226,5 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
         </Card>
     );
 }
+
+    
