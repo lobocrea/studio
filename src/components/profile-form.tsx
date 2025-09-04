@@ -104,7 +104,7 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
                     blandas: values.habilidades_blandas.split(',').map(s => s.trim()).filter(Boolean),
                 },
                 languages: values.idiomas.split(',').map(s => s.trim()).filter(Boolean),
-                certificaciones: values.certificaciones.split(',').map(s => s.trim()).filter(Boolean),
+                certifications: values.certificaciones.split(',').map(s => s.trim()).filter(Boolean),
                 contact_info: {
                     email: values.email || '',
                     telefono: values.telefono || '',
@@ -136,6 +136,7 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
                 ...cvData,
                 work_experience: generatedResult.experiencia_laboral,
                 academic_background: generatedResult.formacion_academica,
+                certifications: generatedResult.certificaciones, // Add this line
             };
 
             await saveCvData({ workerData, cvData: finalCvData });
@@ -226,3 +227,5 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
         </Card>
     );
 }
+
+    
