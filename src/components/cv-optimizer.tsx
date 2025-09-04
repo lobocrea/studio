@@ -170,7 +170,8 @@ export function CvOptimizer() {
         academic_background: result.formacion_academica,
         skills: result.habilidades,
         languages: result.idiomas,
-        certificaciones: result.certificaciones,
+        // Make sure certifications is an array, even if empty
+        certifications: result.certificaciones || [], 
         contact_info: result.contacto,
         style: values.style,
       };
@@ -187,7 +188,6 @@ export function CvOptimizer() {
       } else {
         throw new Error('Save operation failed silently.');
       }
-
 
     } catch(e) {
       console.error(e);
