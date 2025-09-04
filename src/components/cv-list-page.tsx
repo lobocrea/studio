@@ -9,7 +9,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { CvPreview } from './cv-preview';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 
 type CvListPageProps = {
@@ -104,29 +104,27 @@ export function CvListPage({ cvs }: CvListPageProps) {
                     return (
                          <Card key={cv.id} className="glassmorphism-card overflow-hidden">
                             <AccordionItem value={`item-${cv.id}`} className="border-b-0">
-                                <AccordionTrigger className="p-4 hover:no-underline">
-                                    <div className="flex justify-between items-center w-full">
-                                        <div className="text-left">
+                                <CardHeader className="flex flex-row items-center justify-between p-4">
+                                     <AccordionTrigger className="flex-1 text-left p-0 hover:no-underline">
+                                        <div>
                                             <p className="font-bold text-lg text-primary-foreground">{cv.title || 'CV sin título'}</p>
                                             <p className="text-sm text-muted-foreground">Generado el {new Date(cv.created_at).toLocaleDateString()}</p>
                                         </div>
-                                         <Button
-                                            onClick={(e) => {
-                                                e.stopPropagation(); // prevent accordion from toggling
-                                                handleDownloadPdf(cv, index);
-                                            }}
-                                            disabled={isDownloading === cv.id}
-                                            className="mr-4"
-                                            >
-                                            {isDownloading === cv.id ? (
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <Download className="mr-2 h-4 w-4" />
-                                            )}
-                                            {isDownloading === cv.id ? 'Descargando...' : 'Descargar PDF'}
-                                        </Button>
-                                    </div>
-                                </AccordionTrigger>
+                                    </AccordionTrigger>
+                                    <Button
+                                        onClick={() => handleDownloadPdf(cv, index)}
+                                        disabled={isDownloading === cv.id}
+                                        className="ml-4"
+                                        variant="outline"
+                                        >
+                                        {isDownloading === cv.id ? (
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                            <Download className="mr-2 h-4 w-4" />
+                                        )}
+                                        {isDownloading === cv.id ? 'Descargando...' : 'Descargar'}
+                                    </Button>
+                                </CardHeader>
                                 <AccordionContent>
                                     <div className="p-4 bg-gray-200 dark:bg-gray-800 flex justify-center overflow-auto">
                                         <div ref={el => previewRefs.current[index] = el} className="transform scale-[0.9]">
