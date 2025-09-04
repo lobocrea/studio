@@ -46,7 +46,7 @@ const findJobOffersFlow = ai.defineFlow(
   async (input) => {
     const supabase = await createSupabaseServerClient();
     
-    // 1. Fetch the user and their skills and location from the latest CV
+    // 1. Fetch the user's location from the CV and their technical skills from the skills table
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         throw new Error('User not authenticated.');
@@ -70,7 +70,8 @@ const findJobOffersFlow = ai.defineFlow(
     }
     
     const location = (cvData?.contact_info as any)?.ubicacion || '';
-    const skills = skillsData?.map(s => s.skill_name) || [];
+    // We only use technical skills for a more precise job search
+    const technicalSkills = skillsData?.map(s => s.skill_name) || [];
     
     // 2. Call the TheirStack API
     const apiKey = process.env.THEIR_STACK_API_KEY;
@@ -79,7 +80,7 @@ const findJobOffersFlow = ai.defineFlow(
     }
     
     const countryCode = location?.split(',').pop()?.trim().toUpperCase();
-    const searchTerms = skills.join(' ');
+    const searchTerms = technicalSkills.join(' ');
 
     const requestBody: any = {
         page: (input.page ?? 1) - 1,
@@ -90,6 +91,7 @@ const findJobOffersFlow = ai.defineFlow(
         include_total_results: false,
     };
     
+    // Use `query_and` to ensure results match the key skills
     if (searchTerms) {
         requestBody.query_and = [searchTerms];
     }
@@ -107,7 +109,7 @@ const findJobOffersFlow = ai.defineFlow(
 
         if (!response.ok) {
             const errorBody = await response.text();
-            console.error('TheirStack API Error:', response.status, errorBody);
+            console.error('TheirStack API Error:', `Status: ${response.status}`, `Body: ${errorBody}`);
             throw new Error(`Failed to fetch job offers from theirStack: ${response.statusText}`);
         }
 
