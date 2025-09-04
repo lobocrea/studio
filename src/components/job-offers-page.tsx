@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -14,7 +13,7 @@ interface JobOffersProps {
   cvData: GenerateOptimizedCvOutput;
 }
 
-export function JobOffers({ cvData }: JobOffersProps) {
+export function JobOffersPage({ cvData }: JobOffersProps) {
   const [jobs, setJobs] = useState<JobOffer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -79,7 +78,7 @@ export function JobOffers({ cvData }: JobOffersProps) {
 
   if (error) {
     return (
-        <Card className="glassmorphism-card">
+        <Card className="glassmorphism-card w-full">
             <CardHeader>
                 <CardTitle>Error al buscar empleos</CardTitle>
             </CardHeader>
@@ -92,7 +91,7 @@ export function JobOffers({ cvData }: JobOffersProps) {
   
   if (jobs.length === 0) {
     return (
-      <Card className="glassmorphism-card text-center">
+      <Card className="glassmorphism-card text-center w-full">
             <CardHeader>
                 <CardTitle>No hemos encontrado ofertas</CardTitle>
             </CardHeader>
@@ -104,7 +103,7 @@ export function JobOffers({ cvData }: JobOffersProps) {
   }
 
   return (
-    <Card className="glassmorphism-card">
+    <Card className="glassmorphism-card w-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
             <Sparkles className="text-primary"/>

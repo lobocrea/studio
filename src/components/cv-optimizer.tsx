@@ -20,7 +20,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { LoadingState } from './loading-state';
-import { JobOffers } from './job-offers';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { createSupabaseBrowserClient } from '@/lib/supabase-client';
@@ -158,8 +157,13 @@ export function CvOptimizer() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated.");
 
-      const workerData = {
-        id: user.id,
+      const result = await generateOptimizedCv({ 
+        extractedData: JSON.stringify(extractedData),
+        contactData: contactData,
+        style: values.style 
+      });
+
+      const workerDataToSave = {
         full_name: values.fullName,
         email: values.email,
         phone: values.telefono,
@@ -167,29 +171,21 @@ export function CvOptimizer() {
         linkedin_url: values.linkedin,
         website_url: values.sitio_web,
         profile_pic_url: profilePicUrl,
-        updated_at: new Date().toISOString(),
       };
 
-      const result = await generateOptimizedCv({ 
-        extractedData: JSON.stringify(extractedData),
-        contactData: contactData,
-        style: values.style 
-      });
-
       const cvDataToSave = {
-        worker_id: user.id,
         title: result.title,
         professional_summary: result.resumen_profesional,
-        work_experience: result.experiencia_laboral,
-        academic_background: result.formacion_academica,
-        skills: result.habilidades,
+        work_experience: result.experiencia_laboral, // Save the structured data
+        academic_background: result.formacion_academica, // Save the structured data
+        skills: result.habilidades, // Save the structured data
         languages: result.idiomas,
         certifications: result.certificaciones,
         contact_info: result.contacto,
         style: values.style,
       };
       
-      await saveCvData({ workerData, cvData: cvDataToSave });
+      await saveCvData({ workerData: workerDataToSave, cvData: cvDataToSave });
 
       toast({
         title: '¡CV Guardado y Optimizado!',
@@ -264,6 +260,10 @@ export function CvOptimizer() {
     await supabase.auth.signOut();
     router.refresh();
   };
+
+  const showJobs = () => {
+      router.push('/dashboard/jobs');
+  }
 
   if (error) {
     return (
@@ -417,12 +417,15 @@ export function CvOptimizer() {
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                       <div>
                           <CardTitle className="font-headline text-2xl">¡Tu CV está listo!</CardTitle>
-                          <CardDescription>Descárgalo en formato PDF. ¡Mucha suerte en tu búsqueda!</CardDescription>
+                          <CardDescription>Descárgalo en formato PDF o ve directamente a buscar empleos.</CardDescription>
                       </div>
                       <div className="flex gap-2 w-full md:w-auto">
                           <Button onClick={handleDownloadPdf} className="w-full md:w-auto" disabled={isDownloading}>
                               {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                               PDF
+                          </Button>
+                           <Button onClick={showJobs} className="w-full md:w-auto">
+                              Ver Empleos
                           </Button>
                       </div>
                   </div>
@@ -503,9 +506,6 @@ export function CvOptimizer() {
                   <Button onClick={startOver} variant="outline">Empezar de nuevo</Button>
               </CardFooter>
           </Card>
-          
-          <JobOffers cvData={optimizedCv} />
-
         </div>
       )}
     </div>

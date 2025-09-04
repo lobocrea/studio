@@ -22,16 +22,34 @@ const WorkerDataSchema = z.object({
   profile_pic_url: z.string().optional().nullable(),
 });
 
-// Define the schema for CV data
+// Define the schema for CV data, ensuring complex fields are typed correctly
 const CvDataSchema = z.object({
   title: z.string(),
   professional_summary: z.string(),
-  work_experience: z.any(), // JSONB can be complex, using any for flexibility
-  academic_background: z.any(),
-  skills: z.any(),
-  languages: z.any(),
-  certifications: z.any(),
-  contact_info: z.any(),
+  work_experience: z.array(z.object({
+    puesto: z.string(),
+    empresa: z.string(),
+    fecha: z.string(),
+    descripcion: z.string(),
+  })),
+  academic_background: z.array(z.object({
+    titulo: z.string(),
+    institucion: z.string(),
+    fecha: z.string(),
+  })),
+  skills: z.object({
+    tecnicas: z.array(z.string()),
+    blandas: z.array(z.string()),
+  }),
+  languages: z.array(z.string()),
+  certifications: z.array(z.string()),
+  contact_info: z.object({
+    email: z.string(),
+    telefono: z.string(),
+    ubicacion: z.string(),
+    linkedin: z.string().optional(),
+    sitio_web: z.string().optional(),
+  }),
   style: z.string(),
 });
 
