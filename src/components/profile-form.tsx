@@ -14,7 +14,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/types/supabase';
-import { generateOptimizedCv } from '@/ai/flows/generate-optimized-cv';
 
 type ProfileFormProps = {
     initialCvData: Tables<'cvs'>;
@@ -62,8 +61,8 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
         title: initialCvData.title || '',
         resumen_profesional: initialCvData.professional_summary || '',
         // Convert array of objects to string for textarea
-        experiencia_laboral: ((initialCvData.work_experience as any[]) || []).map(e => `${e.puesto} en ${e.empresa} (${e.fecha})\n${e.descripcion}`).join('\n\n'),
-        formacion_academica: ((initialCvData.academic_background as any[]) || []).map(e => `${e.titulo} en ${e.institucion} (${e.fecha})`).join('\n'),
+        experiencia_laboral: ((initialCvData.work_experience as any[]) || []).map(e => `${e.puesto || ''} en ${e.empresa || ''} (${e.fecha || ''})\n${e.descripcion || ''}`).join('\n\n'),
+        formacion_academica: ((initialCvData.academic_background as any[]) || []).map(e => `${e.titulo || ''} en ${e.institucion || ''} (${e.fecha || ''})`).join('\n'),
         // Join arrays into comma-separated strings for inputs
         habilidades_tecnicas: parseJsonArray((initialCvData.skills as any)?.tecnicas).join(', '),
         habilidades_blandas: parseJsonArray((initialCvData.skills as any)?.blandas).join(', '),
@@ -76,6 +75,37 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
         defaultValues: getInitialFormValues(),
     });
     
+    // This function attempts to parse the unstructured text from the textarea
+    // back into a structured format. This is a simplification and might not
+    // perfectly handle all user input variations.
+    const parseWorkExperience = (text: string) => {
+        return text.split('\n\n').map(entry => {
+            const lines = entry.split('\n');
+            const titleLine = lines[0] || '';
+            const description = lines.slice(1).join('\n');
+            
+            const titleMatch = titleLine.match(/(.+) en (.+) \((.+)\)/);
+            
+            return {
+                puesto: titleMatch ? titleMatch[1].trim() : titleLine,
+                empresa: titleMatch ? titleMatch[2].trim() : '',
+                fecha: titleMatch ? titleMatch[3].trim() : '',
+                descripcion: description,
+            };
+        }).filter(e => e.puesto);
+    };
+
+    const parseAcademicBackground = (text: string) => {
+         return text.split('\n').map(entry => {
+            const titleMatch = entry.match(/(.+) en (.+) \((.+)\)/);
+            return {
+                titulo: titleMatch ? titleMatch[1].trim() : entry,
+                institucion: titleMatch ? titleMatch[2].trim() : '',
+                fecha: titleMatch ? titleMatch[3].trim() : '',
+            };
+        }).filter(e => e.titulo);
+    };
+
     const handleSaveChanges = async (values: FormValues) => {
         setIsSaving(true);
 
@@ -90,15 +120,12 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
                 profile_pic_url: values.profilePicUrl,
             };
             
-            // Note: When saving, we need to regenerate the structured JSON from the text areas.
-            // This is a simplification. A real-world app might use a more complex form with structured data entry.
-            const cvData = {
+            const cvDataToSave = {
                 id: initialCvData.id, // Important to pass the ID for updating
                 title: values.title,
                 professional_summary: values.resumen_profesional,
-                 // This is a simplification. We re-generate the CV to get the rich format back.
-                work_experience: [],
-                academic_background: [],
+                work_experience: parseWorkExperience(values.experiencia_laboral),
+                academic_background: parseAcademicBackground(values.formacion_academica),
                 skills: {
                     tecnicas: values.habilidades_tecnicas.split(',').map(s => s.trim()).filter(Boolean),
                     blandas: values.habilidades_blandas.split(',').map(s => s.trim()).filter(Boolean),
@@ -115,31 +142,7 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
                 style: initialCvData.style || 'Modern'
             };
 
-            // First, re-generate the CV to get structured data for experience and education
-             const extractedDataForGen = {
-                resumen_profesional: values.resumen_profesional,
-                experiencia_laboral: values.experiencia_laboral.split('\n\n').filter(Boolean),
-                formacion_academica: values.formacion_academica.split('\n').filter(Boolean),
-                habilidades: cvData.skills,
-                idiomas: cvData.languages,
-                certificaciones: cvData.certificaciones,
-            };
-
-            const generatedResult = await generateOptimizedCv({
-                extractedData: JSON.stringify(extractedDataForGen),
-                contactData: cvData.contact_info,
-                style: cvData.style as any,
-            });
-
-            // Now, use the structured data from the generated result to save
-            const finalCvData = {
-                ...cvData,
-                work_experience: generatedResult.experiencia_laboral,
-                academic_background: generatedResult.formacion_academica,
-                certifications: generatedResult.certificaciones, // Add this line
-            };
-
-            await saveCvData({ workerData, cvData: finalCvData });
+            await saveCvData({ workerData, cvData: cvDataToSave });
 
             toast({
                 title: '¡Perfil Actualizado!',
@@ -194,10 +197,10 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
                                 <FormItem><FormLabel>Resumen Profesional</FormLabel><FormControl><Textarea rows={5} {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
                             <FormField control={form.control} name="experiencia_laboral" render={({ field }) => (
-                                <FormItem><FormLabel>Experiencia Laboral</FormLabel><FormControl><Textarea rows={8} {...field} /></FormControl><FormDescription>Separa cada puesto con una línea en blanco.</FormDescription><FormMessage /></FormItem>
+                                <FormItem><FormLabel>Experiencia Laboral</FormLabel><FormControl><Textarea rows={8} {...field} /></FormControl><FormDescription>Separa cada puesto con una línea en blanco. Usa el formato "Puesto en Empresa (Fecha)".</FormDescription><FormMessage /></FormItem>
                             )} />
                             <FormField control={form.control} name="formacion_academica" render={({ field }) => (
-                                <FormItem><FormLabel>Formación Académica</FormLabel><FormControl><Textarea rows={4} {...field} /></FormControl><FormDescription>Cada título en una línea nueva.</FormDescription><FormMessage /></FormItem>
+                                <FormItem><FormLabel>Formación Académica</FormLabel><FormControl><Textarea rows={4} {...field} /></FormControl><FormDescription>Cada título en una línea nueva. Usa el formato "Título en Institución (Fecha)".</FormDescription><FormMessage /></FormItem>
                             )} />
                             <div className="grid md:grid-cols-2 gap-8">
                                 <FormField control={form.control} name="habilidades_tecnicas" render={({ field }) => (

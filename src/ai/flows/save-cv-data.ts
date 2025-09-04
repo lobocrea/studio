@@ -98,15 +98,18 @@ const saveCvDataFlow = ai.defineFlow(
     }
 
     // 3. Upsert CV data
-    // If cvData has an id, it will update. Otherwise, it will insert.
     const { id: cvId, ...cvDataToSave } = cvData;
 
-    const upsertData = {
+    const upsertData: any = {
         ...cvDataToSave,
         worker_id: userId,
-        ...(cvId && { id: cvId }), // Conditionally add id if it exists
     };
     
+    // If cvId exists, we are updating an existing record.
+    if (cvId) {
+        upsertData.id = cvId;
+    }
+
     const { error: cvError } = await supabase
       .from('cvs')
       .upsert(upsertData);
@@ -120,3 +123,5 @@ const saveCvDataFlow = ai.defineFlow(
     return { success: true };
   }
 );
+
+    
