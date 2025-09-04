@@ -50,7 +50,7 @@ const findJobOffersFlow = ai.defineFlow(
         throw new Error('User not authenticated.');
     }
 
-    // 2. Fetch the user's location from the most recent CV and their technical skills from the skills table
+    // 2. Fetch the user's location from the workers table and their technical skills from the skills table
     const { data: workerData, error: workerError } = await supabase
         .from('workers')
         .select('location')
@@ -80,7 +80,7 @@ const findJobOffersFlow = ai.defineFlow(
     const countryCode = location?.split(',').pop()?.trim().toUpperCase();
 
     const requestBody: any = {
-        page: 0, // We always fetch from the start, the limit controls how many we get
+        page: 0,
         limit: input.limit,
         posted_at_max_age_days: 60,
         order_by: [{ field: "date_posted", desc: true }],
@@ -91,7 +91,7 @@ const findJobOffersFlow = ai.defineFlow(
         requestBody.job_country_code_or = [countryCode];
     }
     
-    // Use `query_and` to ensure results match the key skills
+    // Use `query_and` to ensure results match the key skills from the skills table
     if (technicalSkills.length > 0) {
         requestBody.query_and = technicalSkills;
     }
