@@ -51,24 +51,16 @@ const findJobOffersFlow = ai.defineFlow(
       throw new Error('THEIR_STACK_API_KEY is not configured.');
     }
     
-    // Attempt to extract country code from location string (e.g., "Valencia, Carabobo, VE" -> "VE")
     const countryCode = input.location?.split(',').pop()?.trim().toUpperCase();
 
-    // Combine skills and job/education titles for a focused search query.
-    // This avoids noise from long descriptions.
-    const searchKeywords = [...new Set([
-        ...input.skills,
-        ...input.experience, // Should be job titles
-        ...input.education   // Should be degree titles
-    ])].join(' ');
-
     const requestBody: any = {
-        q: searchKeywords,
-        page: input.page,
+        // The page in the API is 0-indexed, so we subtract 1.
+        page: (input.page ?? 1) -1,
         limit: input.limit,
-        posted_at_max_age_days: 90, // Look for jobs in the last 3 months
+        posted_at_max_age_days: 60,
         order_by: [{ field: "date_posted", desc: true }],
-        job_country_code_or: countryCode ? [countryCode] : undefined, // Filter by country if available
+        job_country_code_or: countryCode ? [countryCode] : undefined,
+        include_total_results: false,
     };
 
     try {
@@ -89,8 +81,6 @@ const findJobOffersFlow = ai.defineFlow(
         }
 
         const data = await response.json();
-
-        // The API returns an object with a "jobs" array. We need to map it to our schema.
         const jobs = data.jobs || [];
         
         return jobs.map((job: any) => ({
@@ -106,7 +96,6 @@ const findJobOffersFlow = ai.defineFlow(
         }));
     } catch (error) {
         console.error('Error in findJobOffersFlow:', error);
-        // Return an empty array on error to avoid breaking the UI
         return [];
     }
   }
