@@ -1,7 +1,7 @@
 
 import { Sidebar, SidebarContent, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { Briefcase, FileText, User } from "lucide-react";
+import { Briefcase, FileText, Files, User } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -27,6 +27,14 @@ export default async function DashboardLayout({
                     <Link href="/dashboard">
                         <FileText />
                         Optimizar CV
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                 <SidebarMenuButton asChild>
+                    <Link href="/dashboard/cvs">
+                        <Files />
+                        Mis CVs
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
