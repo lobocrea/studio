@@ -97,6 +97,8 @@ const findJobOffersFlow = ai.defineFlow(
     }
 
     try {
+        console.log('Sending request to theirStack with body:', JSON.stringify(requestBody, null, 2));
+
         const response = await fetch(`https://api.theirstack.com/v1/jobs/search`, {
             method: 'POST',
             headers: {
@@ -116,6 +118,8 @@ const findJobOffersFlow = ai.defineFlow(
         const data = await response.json();
         const jobs = data.jobs || [];
         
+        console.log(`Found ${jobs.length} jobs from TheirStack.`);
+
         return jobs.map((job: any) => ({
             id: job.id,
             title: job.title,
@@ -133,3 +137,4 @@ const findJobOffersFlow = ai.defineFlow(
     }
   }
 );
+
