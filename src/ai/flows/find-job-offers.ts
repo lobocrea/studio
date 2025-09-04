@@ -27,8 +27,8 @@ export type JobOffer = z.infer<typeof JobOfferSchema>;
 
 const FindJobOffersInputSchema = z.object({
   skills: z.array(z.string()).describe('A list of the user\'s technical skills.'),
-  experience: z.array(z.string()).describe('A list of the user\'s work experiences.'),
-  education: z.array(z.string()).describe('A list of the user\'s academic background.'),
+  experience: z.array(z.string()).describe('A list of the user\'s work experiences (titles).'),
+  education: z.array(z.string()).describe('A list of the user\'s academic background (titles).'),
   location: z.string().optional().describe('The user\'s location (e.g., "Madrid, Spain").'),
   page: z.number().optional().default(1),
   limit: z.number().optional().default(3),
@@ -54,11 +54,12 @@ const findJobOffersFlow = ai.defineFlow(
     // Attempt to extract country code from location string (e.g., "Valencia, Carabobo, VE" -> "VE")
     const countryCode = input.location?.split(',').pop()?.trim().toUpperCase();
 
-    // Combine skills and keywords from experience/education for a richer search query.
+    // Combine skills and job/education titles for a focused search query.
+    // This avoids noise from long descriptions.
     const searchKeywords = [...new Set([
         ...input.skills,
-        ...input.experience,
-        ...input.education
+        ...input.experience, // Should be job titles
+        ...input.education   // Should be degree titles
     ])].join(' ');
 
     const requestBody: any = {
