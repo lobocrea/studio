@@ -135,7 +135,7 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
             const finalCvData = {
                 ...cvData,
                 work_experience: generatedResult.experiencia_laboral,
-                academic_background: generatedResult.academic_background,
+                academic_background: generatedResult.formacion_academica,
             };
 
             await saveCvData({ workerData, cvData: finalCvData });
