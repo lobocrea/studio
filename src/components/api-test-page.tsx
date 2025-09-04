@@ -64,7 +64,7 @@ export function ApiTestPage() {
                     <h3 className="font-semibold">Prueba de Búsqueda</h3>
                     <Badge variant={getSearchTestVariant(apiResponse.searchTest.success)}>
                          {apiResponse.searchTest.success ? <CheckCircle2 className="mr-2"/> : <XCircle className="mr-2"/>}
-                        {api_response.searchTest.success ? 'Éxito' : 'Fallo'}
+                        {apiResponse.searchTest.success ? 'Éxito' : 'Fallo'}
                     </Badge>
                 </div>
 
@@ -102,4 +102,3 @@ export function ApiTestPage() {
     </Card>
   );
 }
-
