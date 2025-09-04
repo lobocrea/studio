@@ -131,7 +131,7 @@ export function JobSearchPage({ userSkills }: JobSearchPageProps) {
                                                 <SelectItem value="Media jornada">Media jornada</SelectItem>
                                                 <SelectItem value="Autónomo">Autónomo</SelectItem>
                                                 <SelectItem value="Temporal">Temporal</SelectItem>
-                                                <SelectItem value="Prácticas">Prácticas</ctypes>
+                                                <SelectItem value="Prácticas">Prácticas</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
