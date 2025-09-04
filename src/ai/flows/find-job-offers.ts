@@ -77,6 +77,7 @@ const findJobOffersFlow = ai.defineFlow(
       throw new Error('THEIR_STACK_API_KEY is not configured.');
     }
     
+    // Extract country code from location, e.g., "Madrid, ES" -> "ES"
     const countryCode = location?.split(',').pop()?.trim().toUpperCase();
 
     const requestBody: any = {
@@ -137,4 +138,3 @@ const findJobOffersFlow = ai.defineFlow(
     }
   }
 );
-

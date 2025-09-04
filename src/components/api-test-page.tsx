@@ -54,7 +54,7 @@ export function ApiTestPage() {
         {apiResponse && (
             <div className="mt-6 space-y-4 rounded-lg border border-border p-4">
                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">Resultado General</h3>
+                    <h3 className="font-semibold">Resultado General (Salud)</h3>
                     <Badge variant={getStatusVariant(apiResponse.available)}>
                         {apiResponse.available ? <CheckCircle2 className="mr-2"/> : <XCircle className="mr-2"/>}
                         {apiResponse.available ? 'API Disponible' : 'API no Disponible'}
