@@ -3,18 +3,18 @@
 
 import { saveCvData } from '@/ai/flows/save-cv-data';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Save, Wand2 } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/types/supabase';
-import { generateOptimizedCv, GenerateOptimizedCvOutput } from '@/ai/flows/generate-optimized-cv';
+import { generateOptimizedCv } from '@/ai/flows/generate-optimized-cv';
 
 type ProfileFormProps = {
     initialCvData: Tables<'cvs'>;
@@ -62,8 +62,8 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
         title: initialCvData.title || '',
         resumen_profesional: initialCvData.professional_summary || '',
         // Convert array of objects to string for textarea
-        experiencia_laboral: (initialCvData.work_experience as any[] || []).map(e => `${e.puesto} en ${e.empresa} (${e.fecha})\n${e.descripcion}`).join('\n\n'),
-        formacion_academica: (initialCvData.academic_background as any[] || []).map(e => `${e.titulo} en ${e.institucion} (${e.fecha})`).join('\n'),
+        experiencia_laboral: ((initialCvData.work_experience as any[]) || []).map(e => `${e.puesto} en ${e.empresa} (${e.fecha})\n${e.descripcion}`).join('\n\n'),
+        formacion_academica: ((initialCvData.academic_background as any[]) || []).map(e => `${e.titulo} en ${e.institucion} (${e.fecha})`).join('\n'),
         // Join arrays into comma-separated strings for inputs
         habilidades_tecnicas: parseJsonArray((initialCvData.skills as any)?.tecnicas).join(', '),
         habilidades_blandas: parseJsonArray((initialCvData.skills as any)?.blandas).join(', '),
@@ -226,5 +226,3 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
         </Card>
     );
 }
-
-    
