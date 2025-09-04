@@ -29,9 +29,6 @@ export type JobOffer = z.infer<typeof JobOfferSchema>;
 const FindJobOffersInputSchema = z.object({
   skill: z.string().optional(),
   location: z.string().optional(),
-  // Note: theirStack API doesn't have a direct `contractType` filter in the documented search body.
-  // This might be part of the general query `q` or a specific perk.
-  // For now, we will include it in the query if provided.
   contractType: z.string().optional(), 
   limit: z.number().optional().default(10),
 });
@@ -53,27 +50,25 @@ const findJobOffersFlow = ai.defineFlow(
       throw new Error('THEIR_STACK_API_KEY is not configured.');
     }
     
-    // Construct the query based on input
-    const queryParts = [];
-    if (input.skill) queryParts.push(input.skill);
-    if (input.contractType) queryParts.push(input.contractType);
-    
     const requestBody: any = {
         page: 0,
         limit: input.limit,
         posted_at_max_age_days: 60,
         order_by: [{ field: "date_posted", desc: true }],
         include_total_results: false,
+        q_and: [],
     };
     
-    // Use `query_and` for the selected skill if present
+    let generalQuery = '';
+
+    // Add skill to the `q_and` array for precise matching
     if (input.skill) {
-        requestBody.query_and = [input.skill];
+        requestBody.q_and.push(input.skill);
     }
     
-    // Add contract type to general query if specified
-    if(input.contractType){
-      requestBody.q = input.contractType;
+    // Add contract type to general query text if specified
+    if(input.contractType && input.contractType !== 'all'){
+      generalQuery += `${input.contractType} `;
     }
 
     // Add location to the search body if provided
@@ -81,7 +76,17 @@ const findJobOffersFlow = ai.defineFlow(
         // The API seems to expect a country code. We will assume the user enters a province in Spain.
         requestBody.job_country_code_or = ["ES"];
         // We can add the specific province to the general query text
-        requestBody.q = requestBody.q ? `${requestBody.q} ${input.location}` : input.location;
+        generalQuery += input.location;
+    }
+
+    // Assign the combined query to the request body if it's not empty
+    if (generalQuery.trim()) {
+        requestBody.q = generalQuery.trim();
+    }
+    
+    // Clean up empty q_and
+    if (requestBody.q_and.length === 0) {
+        delete requestBody.q_and;
     }
 
 

@@ -11,7 +11,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
 import { Input } from './ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue } from './ui/select';
 import { JobOffersList } from './job-offers-page';
 
 type JobSearchPageProps = {
@@ -37,7 +37,7 @@ export function JobSearchPage({ userSkills }: JobSearchPageProps) {
         defaultValues: {
             skill: '',
             location: 'España',
-            contractType: '',
+            contractType: 'all', // Use 'all' as the default value
         },
     });
 
@@ -49,8 +49,9 @@ export function JobSearchPage({ userSkills }: JobSearchPageProps) {
             const results = await findJobOffers({
                 skill: values.skill,
                 location: values.location,
-                contractType: values.contractType,
-                limit: 20, // Fetch up to 20 results for a manual search
+                // Pass contractType only if it's not 'all'
+                contractType: values.contractType === 'all' ? undefined : values.contractType,
+                limit: 20, 
             });
             setJobs(results);
         } catch (e) {
@@ -92,7 +93,7 @@ export function JobSearchPage({ userSkills }: JobSearchPageProps) {
                                                         <SelectItem key={skill} value={skill}>{skill}</SelectItem>
                                                     ))
                                                 ) : (
-                                                    <SelectItem value="" disabled>No tienes habilidades guardadas</SelectItem>
+                                                    <SelectLabel className='text-muted-foreground italic'>No tienes skills guardadas</SelectLabel>
                                                 )}
                                             </SelectContent>
                                         </Select>
@@ -126,7 +127,7 @@ export function JobSearchPage({ userSkills }: JobSearchPageProps) {
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="">Cualquiera</SelectItem>
+                                                <SelectItem value="all">Cualquiera</SelectItem>
                                                 <SelectItem value="Jornada completa">Jornada completa</SelectItem>
                                                 <SelectItem value="Media jornada">Media jornada</SelectItem>
                                                 <SelectItem value="Autónomo">Autónomo</SelectItem>
@@ -139,7 +140,7 @@ export function JobSearchPage({ userSkills }: JobSearchPageProps) {
                                 )}
                             />
 
-                            <Button type="submit" disabled={isSearching} className="w-full">
+                            <Button type="submit" disabled={isSearching || !form.formState.isValid}>
                                 {isSearching ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
