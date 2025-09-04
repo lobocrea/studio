@@ -1,8 +1,9 @@
+
 'use server';
 
 /**
- * @fileOverview A flow to save worker and CV data to Supabase.
- * 
+ * @fileOverview A flow to save or update worker and CV data to Supabase.
+ *
  * - saveCvData - A function that handles saving the data.
  * - SaveCvDataInput - The input type for the saveCvData function.
  */
@@ -24,6 +25,7 @@ const WorkerDataSchema = z.object({
 
 // Define the schema for CV data, ensuring complex fields are typed correctly
 const CvDataSchema = z.object({
+  id: z.number().optional(), // Include ID for updates
   title: z.string(),
   professional_summary: z.string(),
   work_experience: z.array(z.object({
@@ -75,36 +77,40 @@ const saveCvDataFlow = ai.defineFlow(
     const supabase = await createSupabaseServerClient();
     // 1. Get the current authenticated user from Supabase Auth
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
       throw new Error('User not authenticated.');
     }
     const userId = user.id;
 
     // 2. Upsert worker data
-    // This will insert a new row if one doesn't exist for the user,
-    // or update the existing one if it does.
     const { error: workerError } = await supabase
       .from('workers')
       .upsert({
         id: userId,
         ...workerData,
         updated_at: new Date().toISOString(),
-      });
+      }, { onConflict: 'id' });
 
     if (workerError) {
       console.error('Error saving worker data:', workerError);
       throw new Error(`Failed to save worker data: ${workerError.message}`);
     }
 
-    // 3. Insert CV data
-    // This will always create a new CV record linked to the worker.
+    // 3. Upsert CV data
+    // If cvData has an id, it will update. Otherwise, it will insert.
+    const { id: cvId, ...cvDataToSave } = cvData;
+
+    const upsertData = {
+        ...cvDataToSave,
+        worker_id: userId,
+        ...(cvId && { id: cvId }), // Conditionally add id if it exists
+    };
+    
     const { error: cvError } = await supabase
       .from('cvs')
-      .insert({
-        worker_id: userId,
-        ...cvData,
-      });
+      .upsert(upsertData);
+
 
     if (cvError) {
       console.error('Error saving CV data:', cvError);

@@ -192,8 +192,9 @@ export function CvOptimizer() {
         description: 'Hemos guardado y generado tu nuevo CV con éxito.',
       });
 
-      setOptimizedCv(result);
-      setStep('result');
+      // Redirect to the jobs page after successful generation
+      router.push('/dashboard/jobs');
+
     } catch(e) {
       console.error(e);
       const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
@@ -260,10 +261,6 @@ export function CvOptimizer() {
     await supabase.auth.signOut();
     router.refresh();
   };
-
-  const showJobs = () => {
-      router.push('/dashboard/jobs');
-  }
 
   if (error) {
     return (
@@ -401,112 +398,13 @@ export function CvOptimizer() {
                     <Button type="button" variant="outline" onClick={startOver}>Cancelar</Button>
                     <Button type="submit" disabled={isGenerating}>
                         {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                        {isGenerating ? 'Guardando y Generando...' : 'Generar CV Optimizado'}
+                        {isGenerating ? 'Guardando y Generando...' : 'Generar CV y Buscar Empleos'}
                     </Button>
                 </CardFooter>
               </form>
             </Form>
           </CardContent>
         </Card>
-      )}
-
-      {step === 'result' && optimizedCv && (
-        <div className="space-y-8">
-          <Card className="glassmorphism-card">
-              <CardHeader>
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                      <div>
-                          <CardTitle className="font-headline text-2xl">¡Tu CV está listo!</CardTitle>
-                          <CardDescription>Descárgalo en formato PDF o ve directamente a buscar empleos.</CardDescription>
-                      </div>
-                      <div className="flex gap-2 w-full md:w-auto">
-                          <Button onClick={handleDownloadPdf} className="w-full md:w-auto" disabled={isDownloading}>
-                              {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                              PDF
-                          </Button>
-                           <Button onClick={showJobs} className="w-full md:w-auto">
-                              Ver Empleos
-                          </Button>
-                      </div>
-                  </div>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center justify-start bg-gray-900/50 p-4 sm:p-8 rounded-lg">
-                  <div id="cv-preview" ref={cvPreviewRef} className="cv-preview-container">
-                    <div className="cv-grid">
-                      <div className="cv-main-col space-y-4">
-                        <header className="cv-header text-center">
-                          <h1 className="cv-header h1">{fullName}</h1>
-                          <h2 className="cv-header h2 mt-1">{optimizedCv.title}</h2>
-                        </header>
-                        
-                        <section>
-                          <h3 className="cv-section-title"><FileText size={14}/>Resumen Profesional</h3>
-                          <p className="cv-exp-desc">{optimizedCv.resumen_profesional}</p>
-                        </section>
-
-                        <section>
-                          <h3 className="cv-section-title"><Briefcase size={14}/>Experiencia Laboral</h3>
-                          {optimizedCv.experiencia_laboral.map((exp, i) => (
-                            <div key={i} className="cv-exp-item">
-                              <h4 className="cv-exp-title">{exp.puesto}</h4>
-                              <p className="cv-exp-subtitle">{exp.empresa} | {exp.fecha}</p>
-                              <p className="cv-exp-desc">{exp.descripcion}</p>
-                            </div>
-                          ))}
-                        </section>
-                        <section>
-                          <h3 className="cv-section-title"><GraduationCap size={14}/>Formación Académica</h3>
-                          {optimizedCv.formacion_academica.map((edu, i) => (
-                            <div key={i} className="cv-edu-item">
-                              <h4 className="cv-edu-title">{edu.titulo}</h4>
-                              <p className="cv-edu-subtitle">{edu.institucion} | {edu.fecha}</p>
-                            </div>
-                          ))}
-                        </section>
-                      </div>
-                      <div className="cv-sidebar-col space-y-4">
-                        {profilePicUrl && <img src={profilePicUrl} alt="Foto de perfil" className="cv-profile-pic" data-ai-hint="profile picture" />}
-                        <section>
-                          <h3 className="cv-section-title">Contacto</h3>
-                          <div className="space-y-1">
-                            {optimizedCv.contacto.email && <div className="cv-contact-item"><Mail size={12}/> <span>{optimizedCv.contacto.email}</span></div>}
-                            {optimizedCv.contacto.telefono && <div className="cv-contact-item"><Phone size={12}/> <span>{optimizedCv.contacto.telefono}</span></div>}
-                            {optimizedCv.contacto.ubicacion && <div className="cv-contact-item"><MapPin size={12}/> <span>{optimizedCv.contacto.ubicacion}</span></div>}
-                            {optimizedCv.contacto.linkedin && <div className="cv-contact-item"><Linkedin size={12}/> <span>{optimizedCv.contacto.linkedin.replace('https://', '')}</span></div>}
-                            {optimizedCv.contacto.sitio_web && <div className="cv-contact-item"><Globe size={12}/> <span>{optimizedCv.contacto.sitio_web.replace('https://', '')}</span></div>}
-                          </div>
-                        </section>
-                        <section>
-                          <h3 className="cv-section-title"><Star size={14}/>Habilidades Técnicas</h3>
-                          <div className="cv-skills-list">
-                            {optimizedCv.habilidades.tecnicas.map((skill, i) => <span key={i} className="cv-skill-item">{skill}</span>)}
-                          </div>
-                        </section>
-                        <section>
-                          <h3 className="cv-section-title"><Star size={14}/>Habilidades Blandas</h3>
-                          <div className="cv-skills-list">
-                            {optimizedCv.habilidades.blandas.map((skill, i) => <span key={i} className="cv-skill-item">{skill}</span>)}
-                          </div>
-                        </section>
-                        <section>
-                          <h3 className="cv-section-title"><Languages size={14}/>Idiomas</h3>
-                            {optimizedCv.idiomas.map((lang, i) => <p key={i} className="cv-text-xs">{lang}</p>)}
-                        </section>
-                        {optimizedCv.certificaciones.length > 0 && (
-                          <section>
-                            <h3 className="cv-section-title"><Award size={14}/>Certificaciones</h3>
-                              {optimizedCv.certificaciones.map((cert, i) => <p key={i} className="cv-text-xs">{cert}</p>)}
-                          </section>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-              </CardContent>
-              <CardFooter className="justify-center pt-6">
-                  <Button onClick={startOver} variant="outline">Empezar de nuevo</Button>
-              </CardFooter>
-          </Card>
-        </div>
       )}
     </div>
   );

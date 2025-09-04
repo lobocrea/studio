@@ -1,16 +1,18 @@
+
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
 import { findJobOffers, type JobOffer } from '@/ai/flows/find-job-offers';
-import type { GenerateOptimizedCvOutput } from '@/ai/flows/generate-optimized-cv';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
+import type { Tables } from '@/types/supabase';
 import { Building, Code, ExternalLink, Loader2, MapPin, PlusCircle, Sparkles } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { LoadingState } from './loading-state';
 
 interface JobOffersProps {
-  cvData: GenerateOptimizedCvOutput;
+  // We pass the full CV row from Supabase
+  cvData: Tables<'cvs'>;
 }
 
 export function JobOffersPage({ cvData }: JobOffersProps) {
@@ -28,10 +30,15 @@ export function JobOffersPage({ cvData }: JobOffersProps) {
     setError(null);
 
     try {
+      // Safely extract and format data from the CV
+      const skills = (cvData.skills as any)?.tecnicas || [];
+      const experience = ((cvData.work_experience || []) as any[]).map(e => `${e.puesto || ''} ${e.descripcion || ''}`);
+      const education = ((cvData.academic_background || []) as any[]).map(e => e.titulo || '');
+
       const jobInput = {
-        skills: cvData.habilidades.tecnicas,
-        experience: cvData.experiencia_laboral.map(e => `${e.puesto} ${e.descripcion}`),
-        education: cvData.formacion_academica.map(e => e.titulo),
+        skills,
+        experience,
+        education,
         page: pageNum,
         limit: limit,
       };
@@ -63,14 +70,10 @@ export function JobOffersPage({ cvData }: JobOffersProps) {
 
   useEffect(() => {
     // Initial load
-    loadJobs(1, 3);
+    if(cvData) {
+        loadJobs(1, 3);
+    }
   }, [cvData]); // Dependency on cvData ensures we reload if the CV changes
-
-  const handleLoadMore = () => {
-    const newPage = page + 1;
-    setPage(newPage);
-    loadJobs(newPage, 1);
-  };
 
   if (isLoading) {
     return <LoadingState text="Buscando ofertas de empleo para ti..." />;
