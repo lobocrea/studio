@@ -7,7 +7,7 @@ import { Building, Code, ExternalLink, Loader2, MapPin, PlusCircle, Sparkles } f
 import React, { useCallback, useEffect, useState } from 'react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { LoadingState } from './loading-state';
 
 interface JobOffersProps {
@@ -20,11 +20,11 @@ export function JobOffersPage({ cvData }: JobOffersProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
+  
+  const initialJobCount = 3;
 
-  const loadJobs = useCallback(async (pageNum: number, limit: number) => {
-    if(pageNum === 1) setIsLoading(true);
+  const loadJobs = useCallback(async (limit: number) => {
+    if (limit === initialJobCount) setIsLoading(true);
     else setIsLoadingMore(true);
     
     setError(null);
@@ -34,28 +34,20 @@ export function JobOffersPage({ cvData }: JobOffersProps) {
       const skills = (cvData.skills as any)?.tecnicas || [];
       const experience = ((cvData.work_experience || []) as any[]).map(e => `${e.puesto || ''} ${e.descripcion || ''}`);
       const education = ((cvData.academic_background || []) as any[]).map(e => e.titulo || '');
+      const location = (cvData.contact_info as any)?.ubicacion || '';
 
       const jobInput = {
         skills,
         experience,
         education,
-        page: pageNum,
-        limit: limit,
+        location,
+        page: 1, // We always fetch page 1
+        limit: limit, // But we increase the limit
       };
       
       const newJobs = await findJobOffers(jobInput);
       
-      if (newJobs.length < limit) {
-        setHasMore(false);
-      }
-
-      if (pageNum === 1) {
-        setJobs(newJobs);
-      } else {
-        // Filter out duplicates that might already be in the list
-        const uniqueNewJobs = newJobs.filter(newJob => !jobs.some(existingJob => existingJob.id === newJob.id));
-        setJobs(prevJobs => [...prevJobs, ...uniqueNewJobs]);
-      }
+      setJobs(newJobs);
 
     } catch (e) {
       console.error('Failed to fetch job offers:', e);
@@ -65,15 +57,19 @@ export function JobOffersPage({ cvData }: JobOffersProps) {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [cvData, jobs]);
+  }, [cvData]);
 
 
   useEffect(() => {
     // Initial load
     if(cvData) {
-        loadJobs(1, 3);
+        loadJobs(initialJobCount);
     }
-  }, [cvData]); // Dependency on cvData ensures we reload if the CV changes
+  }, [cvData, loadJobs]); 
+
+  const handleLoadMore = () => {
+    loadJobs(jobs.length + 1);
+  };
 
   if (isLoading) {
     return <LoadingState text="Buscando ofertas de empleo para ti..." />;
@@ -151,14 +147,13 @@ export function JobOffersPage({ cvData }: JobOffersProps) {
           </div>
         ))}
       </CardContent>
-      {hasMore && (
-         <CardFooter className="flex justify-center">
-            <Button onClick={handleLoadMore} disabled={isLoadingMore} variant="outline">
-              {isLoadingMore ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-              {isLoadingMore ? 'Cargando...' : 'Cargar una más'}
-            </Button>
-         </CardFooter>
-      )}
+      {/* We assume there are always more jobs to load as the API doesn't tell us the total count without an extra param */}
+      <CardFooter className="flex justify-center">
+        <Button onClick={handleLoadMore} disabled={isLoadingMore} variant="outline">
+          {isLoadingMore ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+          {isLoadingMore ? 'Cargando...' : 'Cargar una más'}
+        </Button>
+      </CardFooter>
     </Card>
   );
 }

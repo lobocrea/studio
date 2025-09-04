@@ -29,6 +29,7 @@ const FindJobOffersInputSchema = z.object({
   skills: z.array(z.string()).describe('A list of the user\'s technical skills.'),
   experience: z.array(z.string()).describe('A list of the user\'s work experiences.'),
   education: z.array(z.string()).describe('A list of the user\'s academic background.'),
+  location: z.string().optional().describe('The user\'s location (e.g., "Madrid, Spain").'),
   page: z.number().optional().default(1),
   limit: z.number().optional().default(3),
 });
@@ -49,27 +50,35 @@ const findJobOffersFlow = ai.defineFlow(
     if (!apiKey) {
       throw new Error('THEIR_STACK_API_KEY is not configured.');
     }
+    
+    // Attempt to extract country code from location string (e.g., "Valencia, Carabobo, VE" -> "VE")
+    const countryCode = input.location?.split(',').pop()?.trim().toUpperCase();
 
     // Combine skills and keywords from experience/education for a richer search query.
     const searchKeywords = [...new Set([
         ...input.skills,
-        ...input.experience.flatMap(e => e.split(' ')), // Split experience into words
-        ...input.education.flatMap(e => e.split(' ')) // Split education into words
+        ...input.experience,
+        ...input.education
     ])].join(' ');
 
-    const query = new URLSearchParams({
+    const requestBody: any = {
         q: searchKeywords,
-        page: input.page.toString(),
-        limit: input.limit.toString(),
-    });
+        page: input.page,
+        limit: input.limit,
+        posted_at_max_age_days: 90, // Look for jobs in the last 3 months
+        order_by: [{ field: "date_posted", desc: true }],
+        job_country_code_or: countryCode ? [countryCode] : undefined, // Filter by country if available
+    };
 
     try {
-        const response = await fetch(`https://api.theirstack.com/v1/jobs/search?${query}`, {
-            method: 'GET',
+        const response = await fetch(`https://api.theirstack.com/v1/jobs/search`, {
+            method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
             },
+            body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
