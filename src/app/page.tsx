@@ -42,7 +42,11 @@ export default function LoginPage() {
           title: "¡Revisa tu correo!",
           description: "Hemos enviado un enlace de confirmación a tu email.",
         });
+        // Reset to login view after successful sign-up request
         setIsSignUp(false);
+        // Clear fields
+        setEmail('');
+        setPassword('');
       } else {
         // Sign In
         const { error } = await supabase.auth.signInWithPassword({ email, password });
