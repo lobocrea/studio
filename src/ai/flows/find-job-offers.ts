@@ -26,9 +26,9 @@ const JobOfferSchema = z.object({
 export type JobOffer = z.infer<typeof JobOfferSchema>;
 
 const FindJobOffersInputSchema = z.object({
-  skills: z.array(z.string()).describe('A list of the user\'s technical skills.'),
-  experience: z.array(z.string()).describe('A list of the user\'s work experiences (titles).'),
-  education: z.array(z.string()).describe('A list of the user\'s academic background (titles).'),
+  skills: z.array(z.string()).describe("A list of the user's technical skills."),
+  experience: z.array(z.string()).describe("A list of the user's work experiences (titles)."),
+  education: z.array(z.string()).describe("A list of the user's academic background (titles)."),
   location: z.string().optional().describe('The user\'s location (e.g., "Madrid, Spain").'),
   page: z.number().optional().default(1),
   limit: z.number().optional().default(3),
@@ -51,17 +51,32 @@ const findJobOffersFlow = ai.defineFlow(
       throw new Error('THEIR_STACK_API_KEY is not configured.');
     }
     
+    // Extract the country code from the location string (e.g., "Madrid, ES" -> "ES")
     const countryCode = input.location?.split(',').pop()?.trim().toUpperCase();
+
+    // Construct a focused query string
+    const searchTerms = [
+        ...input.skills, 
+        ...input.experience, 
+        ...input.education
+    ].filter(Boolean).join(' ');
+
 
     const requestBody: any = {
         // The page in the API is 0-indexed, so we subtract 1.
-        page: (input.page ?? 1) -1,
+        page: (input.page ?? 1) - 1,
         limit: input.limit,
-        posted_at_max_age_days: 60,
+        posted_at_max_age_days: 60, // Look for jobs posted in the last 60 days
         order_by: [{ field: "date_posted", desc: true }],
         job_country_code_or: countryCode ? [countryCode] : undefined,
         include_total_results: false,
     };
+    
+    // Only add the query if there are terms to search for
+    if (searchTerms) {
+        requestBody.query_and = [searchTerms];
+    }
+
 
     try {
         const response = await fetch(`https://api.theirstack.com/v1/jobs/search`, {
