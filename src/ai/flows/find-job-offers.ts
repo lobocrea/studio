@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview A flow to find relevant job offers from the theirStack API.
+ * @fileOverview A flow to find relevant job offers from the theirStack API based on a user's skills.
  * 
  * - findJobOffers - A function that handles finding job offers.
  * - FindJobOffersInput - The input type for the findJobOffers function.
@@ -27,8 +27,6 @@ const JobOfferSchema = z.object({
 export type JobOffer = z.infer<typeof JobOfferSchema>;
 
 const FindJobOffersInputSchema = z.object({
-  cvId: z.number().describe("The ID of the CV to base the job search on."),
-  page: z.number().optional().default(1),
   limit: z.number().optional().default(3),
 });
 export type FindJobOffersInput = z.infer<typeof FindJobOffersInputSchema>;
@@ -46,54 +44,56 @@ const findJobOffersFlow = ai.defineFlow(
   async (input) => {
     const supabase = await createSupabaseServerClient();
     
-    // 1. Fetch the user's location from the CV and their technical skills from the skills table
+    // 1. Get the authenticated user
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
         throw new Error('User not authenticated.');
     }
 
-    const { data: cvData, error: cvError } = await supabase
-        .from('cvs')
-        .select('contact_info')
-        .eq('id', input.cvId)
+    // 2. Fetch the user's location from the most recent CV and their technical skills from the skills table
+    const { data: workerData, error: workerError } = await supabase
+        .from('workers')
+        .select('location')
+        .eq('id', user.id)
         .single();
     
     const { data: skillsData, error: skillsError } = await supabase
         .from('skills')
         .select('skill_name')
-        .eq('cv_id', input.cvId)
+        .eq('worker_id', user.id)
         .eq('skill_type', 'tecnica');
 
-    if (cvError || skillsError) {
-        console.error('Error fetching CV or skills data:', cvError || skillsError);
+    if (workerError || skillsError) {
+        console.error('Error fetching worker or skills data:', workerError || skillsError);
         throw new Error('Could not fetch user data to find jobs.');
     }
     
-    const location = (cvData?.contact_info as any)?.ubicacion || '';
-    // We only use technical skills for a more precise job search
+    const location = workerData?.location || '';
     const technicalSkills = skillsData?.map(s => s.skill_name) || [];
     
-    // 2. Call the TheirStack API
+    // 3. Call the TheirStack API
     const apiKey = process.env.THEIR_STACK_API_KEY;
     if (!apiKey) {
       throw new Error('THEIR_STACK_API_KEY is not configured.');
     }
     
     const countryCode = location?.split(',').pop()?.trim().toUpperCase();
-    const searchTerms = technicalSkills.join(' ');
 
     const requestBody: any = {
-        page: (input.page ?? 1) - 1,
+        page: 0, // We always fetch from the start, the limit controls how many we get
         limit: input.limit,
         posted_at_max_age_days: 60,
         order_by: [{ field: "date_posted", desc: true }],
-        job_country_code_or: countryCode ? [countryCode] : undefined,
         include_total_results: false,
     };
     
+    if (countryCode) {
+        requestBody.job_country_code_or = [countryCode];
+    }
+    
     // Use `query_and` to ensure results match the key skills
-    if (searchTerms) {
-        requestBody.query_and = [searchTerms];
+    if (technicalSkills.length > 0) {
+        requestBody.query_and = technicalSkills;
     }
 
     try {

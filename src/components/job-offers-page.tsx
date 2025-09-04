@@ -2,7 +2,6 @@
 'use client';
 
 import { findJobOffers, type JobOffer } from '@/ai/flows/find-job-offers';
-import type { Tables } from '@/types/supabase';
 import { Building, Code, ExternalLink, Loader2, MapPin, PlusCircle, Sparkles } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Badge } from './ui/badge';
@@ -10,12 +9,8 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { LoadingState } from './loading-state';
 
-interface JobOffersProps {
-  // We pass the full CV row from Supabase
-  cvData: Tables<'cvs'>;
-}
-
-export function JobOffersPage({ cvData }: JobOffersProps) {
+// This component no longer needs cvData
+export function JobOffersPage() {
   const [jobs, setJobs] = useState<JobOffer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -30,14 +25,9 @@ export function JobOffersPage({ cvData }: JobOffersProps) {
     setError(null);
 
     try {
-      if (!cvData?.id) {
-        throw new Error("CV data is not available.");
-      }
-
+      // The flow now gets the user ID automatically
       const jobInput = {
-        cvId: cvData.id,
-        page: 1, // We always fetch page 1
-        limit: limit, // But we increase the limit
+        limit: limit,
       };
       
       const newJobs = await findJobOffers(jobInput);
@@ -52,15 +42,13 @@ export function JobOffersPage({ cvData }: JobOffersProps) {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [cvData]);
+  }, []);
 
 
   useEffect(() => {
     // Initial load
-    if(cvData) {
-        loadJobs(initialJobCount);
-    }
-  }, [cvData, loadJobs]); 
+    loadJobs(initialJobCount);
+  }, [loadJobs]); 
 
   const handleLoadMore = () => {
     loadJobs(jobs.length + 1);
@@ -104,7 +92,7 @@ export function JobOffersPage({ cvData }: JobOffersProps) {
             <span>Ofertas de Empleo Relevantes</span>
         </CardTitle>
         <CardDescription>
-          Hemos encontrado estas oportunidades que podrían interesarte basándonos en tu nuevo CV.
+          Hemos encontrado estas oportunidades que podrían interesarte basándonos en tu perfil.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
