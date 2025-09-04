@@ -2,65 +2,31 @@
 'use client';
 
 import { findJobOffers, type JobOffer } from '@/ai/flows/find-job-offers';
-import { Building, Code, ExternalLink, Loader2, MapPin, PlusCircle, Sparkles } from 'lucide-react';
-import React, { useCallback, useEffect, useState } from 'react';
+import { Building, Code, ExternalLink, Loader2, MapPin, Sparkles } from 'lucide-react';
+import React from 'react';
 import { Badge } from './ui/badge';
-import { Button } from './ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
-import { LoadingState } from './loading-state';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
-// This component no longer needs cvData
-export function JobOffersPage() {
-  const [jobs, setJobs] = useState<JobOffer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+type JobOffersListProps = {
+    jobs: JobOffer[];
+    isLoading: boolean;
+    error: string | null;
+}
+
+export function JobOffersList({ jobs, isLoading, error }: JobOffersListProps) {
   
-  const initialJobCount = 3;
-
-  const loadJobs = useCallback(async (limit: number) => {
-    if (limit === initialJobCount) setIsLoading(true);
-    else setIsLoadingMore(true);
-    
-    setError(null);
-
-    try {
-      // The flow now gets the user ID automatically
-      const jobInput = {
-        limit: limit,
-      };
-      
-      const newJobs = await findJobOffers(jobInput);
-      
-      setJobs(newJobs);
-
-    } catch (e) {
-      console.error('Failed to fetch job offers:', e);
-      const errorMessage = e instanceof Error ? e.message : 'Ocurrió un error desconocido.';
-      setError(`No se pudieron cargar las ofertas de empleo: ${errorMessage}`);
-    } finally {
-      setIsLoading(false);
-      setIsLoadingMore(false);
-    }
-  }, []);
-
-
-  useEffect(() => {
-    // Initial load
-    loadJobs(initialJobCount);
-  }, [loadJobs]); 
-
-  const handleLoadMore = () => {
-    loadJobs(jobs.length + 1);
-  };
-
   if (isLoading) {
-    return <LoadingState text="Buscando ofertas de empleo para ti..." />;
+    return (
+        <div className="flex flex-col items-center justify-center p-12 text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <p className="text-lg font-semibold text-muted-foreground">Buscando ofertas...</p>
+        </div>
+    );
   }
 
   if (error) {
     return (
-        <Card className="glassmorphism-card w-full">
+        <Card className="glassmorphism-card w-full mt-6">
             <CardHeader>
                 <CardTitle>Error al buscar empleos</CardTitle>
             </CardHeader>
@@ -73,26 +39,26 @@ export function JobOffersPage() {
   
   if (jobs.length === 0) {
     return (
-      <Card className="glassmorphism-card text-center w-full">
+      <Card className="glassmorphism-card text-center w-full mt-6">
             <CardHeader>
-                <CardTitle>No hemos encontrado ofertas</CardTitle>
+                <CardTitle>No se encontraron ofertas</CardTitle>
             </CardHeader>
             <CardContent>
-                <p>No hemos encontrado ofertas que coincidan con tu perfil en este momento. ¡Inténtalo más tarde!</p>
+                <p>Prueba con otros criterios de búsqueda.</p>
             </CardContent>
         </Card>
     )
   }
 
   return (
-    <Card className="glassmorphism-card w-full">
+    <Card className="glassmorphism-card w-full mt-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
             <Sparkles className="text-primary"/>
-            <span>Ofertas de Empleo Relevantes</span>
+            <span>Resultados de la Búsqueda</span>
         </CardTitle>
         <CardDescription>
-          Hemos encontrado estas oportunidades que podrían interesarte basándonos en tu perfil.
+          Hemos encontrado estas oportunidades según tus criterios.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -130,13 +96,6 @@ export function JobOffersPage() {
           </div>
         ))}
       </CardContent>
-      {/* We assume there are always more jobs to load as the API doesn't tell us the total count without an extra param */}
-      <CardFooter className="flex justify-center">
-        <Button onClick={handleLoadMore} disabled={isLoadingMore} variant="outline">
-          {isLoadingMore ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-          {isLoadingMore ? 'Cargando...' : 'Cargar una más'}
-        </Button>
-      </CardFooter>
     </Card>
   );
 }

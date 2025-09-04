@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview A flow to find relevant job offers from the theirStack API based on a user's skills.
+ * @fileOverview A flow to find relevant job offers from the theirStack API based on user-provided criteria.
  * 
  * - findJobOffers - A function that handles finding job offers.
  * - FindJobOffersInput - The input type for the findJobOffers function.
@@ -10,7 +10,6 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { z } from 'genkit';
 
 const JobOfferSchema = z.object({
@@ -26,8 +25,15 @@ const JobOfferSchema = z.object({
 });
 export type JobOffer = z.infer<typeof JobOfferSchema>;
 
+// The input is now the search criteria from the form
 const FindJobOffersInputSchema = z.object({
-  limit: z.number().optional().default(3),
+  skill: z.string().optional(),
+  location: z.string().optional(),
+  // Note: theirStack API doesn't have a direct `contractType` filter in the documented search body.
+  // This might be part of the general query `q` or a specific perk.
+  // For now, we will include it in the query if provided.
+  contractType: z.string().optional(), 
+  limit: z.number().optional().default(10),
 });
 export type FindJobOffersInput = z.infer<typeof FindJobOffersInputSchema>;
 
@@ -42,44 +48,16 @@ const findJobOffersFlow = ai.defineFlow(
     outputSchema: z.array(JobOfferSchema),
   },
   async (input) => {
-    const supabase = await createSupabaseServerClient();
-    
-    // 1. Get the authenticated user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        throw new Error('User not authenticated.');
-    }
-
-    // 2. Fetch the user's location from the workers table and their technical skills from the skills table
-    const { data: workerData, error: workerError } = await supabase
-        .from('workers')
-        .select('location')
-        .eq('id', user.id)
-        .single();
-    
-    const { data: skillsData, error: skillsError } = await supabase
-        .from('skills')
-        .select('skill_name')
-        .eq('worker_id', user.id)
-        .eq('skill_type', 'tecnica');
-
-    if (workerError || skillsError) {
-        console.error('Error fetching worker or skills data:', workerError || skillsError);
-        throw new Error('Could not fetch user data to find jobs.');
-    }
-    
-    const location = workerData?.location || '';
-    const technicalSkills = skillsData?.map(s => s.skill_name) || [];
-    
-    // 3. Call the TheirStack API
     const apiKey = process.env.THEIR_STACK_API_KEY;
     if (!apiKey) {
       throw new Error('THEIR_STACK_API_KEY is not configured.');
     }
     
-    // Extract country code from location, e.g., "Madrid, ES" -> "ES"
-    const countryCode = location?.split(',').pop()?.trim().toUpperCase();
-
+    // Construct the query based on input
+    const queryParts = [];
+    if (input.skill) queryParts.push(input.skill);
+    if (input.contractType) queryParts.push(input.contractType);
+    
     const requestBody: any = {
         page: 0,
         limit: input.limit,
@@ -88,14 +66,24 @@ const findJobOffersFlow = ai.defineFlow(
         include_total_results: false,
     };
     
-    if (countryCode) {
-        requestBody.job_country_code_or = [countryCode];
+    // Use `query_and` for the selected skill if present
+    if (input.skill) {
+        requestBody.query_and = [input.skill];
     }
     
-    // Use `query_and` to ensure results match the key skills from the skills table
-    if (technicalSkills.length > 0) {
-        requestBody.query_and = technicalSkills;
+    // Add contract type to general query if specified
+    if(input.contractType){
+      requestBody.q = input.contractType;
     }
+
+    // Add location to the search body if provided
+    if (input.location) {
+        // The API seems to expect a country code. We will assume the user enters a province in Spain.
+        requestBody.job_country_code_or = ["ES"];
+        // We can add the specific province to the general query text
+        requestBody.q = requestBody.q ? `${requestBody.q} ${input.location}` : input.location;
+    }
+
 
     try {
         console.log('Sending request to theirStack with body:', JSON.stringify(requestBody, null, 2));
