@@ -177,7 +177,7 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
                                     <FormItem><FormLabel>Ubicación</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField control={form.control} name="linkedin" render={({ field }) => (
-                                    <FormItem><FormLabel>Perfil de LinkedIn</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></Item>
+                                    <FormItem><FormLabel>Perfil de LinkedIn</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField control={form.control} name="sitio_web" render={({ field }) => (
                                     <FormItem><FormLabel>Sitio Web / Portfolio (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
