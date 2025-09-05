@@ -12,7 +12,7 @@ type PublicProfilePageProps = {
 }
 
 export default async function PublicProfilePage({ params }: PublicProfilePageProps) {
-    const supabase = createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient();
     const userId = params.id;
 
     // Fetch worker data
@@ -78,7 +78,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
 
 // Optional: Add metadata to the page
 export async function generateMetadata({ params }: PublicProfilePageProps) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   const userId = params.id;
 
   const { data: workerData } = await supabase

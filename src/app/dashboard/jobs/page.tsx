@@ -5,7 +5,7 @@ import type { Tables } from '@/types/supabase';
 import { redirect } from 'next/navigation';
 
 export default async function JobsDashboardPage() {
-    const supabase = createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient();
 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
