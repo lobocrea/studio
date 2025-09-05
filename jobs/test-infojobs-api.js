@@ -1,6 +1,4 @@
 // Configurar la API key directamente para la prueba
-process.env.THEIRSTACK_API_KEY = 'eyJzdWIiOiJwcmpzdXBhQGdtYWlsLmNvbSIsInBlcm1pc3Npb25zIjoidXNlciIsImNyZWF0ZWRfYXQiOiIyMDI1LTA5LTA0VDIwOjM1OjUxLjcwMTAyNiswMDowMCJ9';
-
 const TheirStackAPI = require('../services/theirstackApi');
 
 async function testTheirStackWithKey() {

@@ -11,7 +11,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test:jobs": "node jobs/test-infojobs-api.js"
+    "test:jobs": "node jobs/test-infojobs-api.js",
+    "server": "node src/server.js"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",

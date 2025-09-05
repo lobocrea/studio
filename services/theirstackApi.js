@@ -3,99 +3,52 @@ const axios = require('axios');
 
 class TheirStackAPI {
   constructor() {
-    this.apiKey = process.env.THEIRSTACK_API_KEY;
+    // El proxy se ejecutará localmente
+    this.proxyBaseUrl = 'http://localhost:3001'; 
   }
 
   async searchJobs({ keyword = '', location = '', limit = 10 }) {
     try {
-      if (!this.apiKey) {
-        throw new Error('THEIRSTACK_API_KEY debe estar configurado en las variables de entorno');
-      }
-
-      console.log('🌐 Usando TheirStack API para buscar trabajos de InfoJobs...');
+      console.log('🌐 Llamando al proxy local para buscar trabajos...');
       
-      // Construir parámetros de búsqueda según la documentación de TheirStack
-      const params = {
-        q: keyword || 'trabajo',
-        location: location || 'España',
-        limit: limit,
-        source: 'infojobs', // Especificar que queremos datos de InfoJobs
-        country: 'ES' // España para InfoJobs
-      };
-
-      const response = await axios.get('https://api.theirstack.com/v1/jobs', {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json'
+      const response = await axios.get(`${this.proxyBaseUrl}/api/jobs`, {
+        params: {
+          skill: keyword,
+          location: location,
+          limit: limit
         },
-        params: params,
-        timeout: 30000
+        timeout: 45000 // Aumentamos el timeout por si el proxy tarda en responder
       });
 
-      // Transformar los datos al formato estándar basado en la estructura de TheirStack
-      const jobs = response.data.jobs?.map(job => ({
-        id: job.id || `theirstack-${Date.now()}-${Math.random()}`,
-        title: job.job_title || job.title,
-        company: job.company,
-        location: job.location,
-        salary: job.salary_string || job.salary,
-        description: job.description,
-        link: job.url || job.final_url,
-        publishDate: job.date_posted || job.discovered_at,
-        tags: job.technology_names || job.company_keywords || [],
-        source: 'InfoJobs (via TheirStack)',
-        remote: job.remote || false,
-        seniority: job.seniority,
-        company_domain: job.company_domain,
-        scraped_at: new Date().toISOString()
-      })) || [];
-
-      console.log(`✅ TheirStack API: ${jobs.length} trabajos encontrados`);
-      return jobs;
+      // La respuesta del proxy ya debería venir en el formato que esperamos
+      console.log(`✅ Proxy respondió con ${response.data.length} trabajos`);
+      return response.data;
 
     } catch (error) {
-      console.error('❌ Error con TheirStack API:', error.response?.data || error.message);
-      throw new Error(`Error obteniendo trabajos de TheirStack API: ${error.message}`);
+      const errorMessage = error.response?.data?.error || error.message;
+      console.error('❌ Error llamando al proxy local:', errorMessage);
+      throw new Error(`Error obteniendo trabajos desde el proxy: ${errorMessage}`);
     }
   }
 
-  // Método para verificar si la API está disponible
   async testConnection() {
     try {
-      if (!this.apiKey) {
-        return { available: false, error: 'API key no configurada' };
-      }
-
-      const response = await axios.get('https://api.theirstack.com/health', {
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`
-        },
-        timeout: 10000
+      console.log('🌐 Probando conexión con el proxy local...');
+      const response = await axios.get(`${this.proxyBaseUrl}/api/health`, {
+        timeout: 15000
       });
-
-      return { 
-        available: true, 
-        status: response.status,
-        data: response.data 
-      };
+      return response.data; // El proxy nos dirá si la conexión con TheirStack es exitosa
     } catch (error) {
-      return { 
+       return { 
         available: false, 
-        error: error.message 
+        error: `No se pudo conectar al servidor proxy en ${this.proxyBaseUrl}. ¿Está iniciado? (${error.message})`
       };
     }
   }
 
-  // Método para obtener información de la API
+  // Este método ya no es necesario, el proxy maneja la info
   async getApiInfo() {
-    try {
-      const response = await axios.get('https://api.theirstack.com/info', {
-        timeout: 10000
-      });
-      return response.data;
-    } catch (error) {
-      return { error: error.message };
-    }
+    return { info: "Este método se comunica a través del proxy local." };
   }
 }
 
