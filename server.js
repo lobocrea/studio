@@ -39,6 +39,8 @@ class TheirStackAPI {
       }
 
       if (location) {
+        // Assuming location is a city/province in Spain for now.
+        // The API seems to prefer country codes.
         requestBody.job_country_code_or = ["ES"];
         generalQuery += location;
       }
@@ -61,15 +63,16 @@ class TheirStackAPI {
         timeout: 30000
       });
 
+      // Mapear la respuesta de TheirStack al formato esperado por el frontend (JobOffer)
       const jobs = response.data.jobs?.map((job) => ({
             id: job.id,
             title: job.title,
-            companyName: job.company_name,
-            companyLogo: job.company_logo,
+            companyName: job.company_name, // Mapeo de company_name a companyName
+            companyLogo: job.company_logo, // Mapeo de company_logo a companyLogo
             perks: job.perks || [],
             salary: job.salary_range ? `${job.salary_range.min} - ${job.salary_range.max} ${job.salary_range.currency}`: null,
             location: job.location,
-            url: job.url,
+            url: job.url, // Mapeo de url a url
             technologies: job.technologies || [],
         })) || [];
 
