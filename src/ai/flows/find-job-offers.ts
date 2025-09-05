@@ -2,7 +2,7 @@
 'use server';
 
 /**
- * @fileOverview A flow to find relevant job offers from the theirStack API based on user-provided criteria.
+ * @fileOverview A flow to find relevant job offers by calling the internal proxy server.
  * 
  * - findJobOffers - A function that handles finding job offers.
  * - FindJobOffersInput - The input type for the findJobOffers function.
@@ -25,7 +25,6 @@ const JobOfferSchema = z.object({
 });
 export type JobOffer = z.infer<typeof JobOfferSchema>;
 
-// The input is now the search criteria from the form
 const FindJobOffersInputSchema = z.object({
   skill: z.string().optional(),
   location: z.string().optional(),
@@ -45,86 +44,46 @@ const findJobOffersFlow = ai.defineFlow(
     outputSchema: z.array(JobOfferSchema),
   },
   async (input) => {
-    const apiKey = process.env.THEIR_STACK_API_KEY;
-    if (!apiKey) {
-      throw new Error('THEIR_STACK_API_KEY is not configured.');
-    }
-    
-    const requestBody: any = {
-        page: 0,
-        limit: input.limit,
-        posted_at_max_age_days: 60,
-        order_by: [{ field: "date_posted", desc: true }],
-        include_total_results: false,
-        q_and: [],
-    };
-    
-    let generalQuery = '';
+    // The base URL of our proxy server. This should be an environment variable in a real app.
+    const proxyServerUrl = process.env.PROXY_SERVER_URL || 'http://localhost:3001';
 
-    // Add skill to the `q_and` array for precise matching
+    // Construct the query parameters
+    const queryParams = new URLSearchParams({
+        limit: String(input.limit || 20),
+    });
+
     if (input.skill) {
-        requestBody.q_and.push(input.skill);
+        queryParams.append('skill', input.skill);
     }
-    
-    // Add contract type to general query text if specified
-    if(input.contractType && input.contractType !== 'all'){
-      generalQuery += `${input.contractType} `;
-    }
-
-    // Add location to the search body if provided
     if (input.location) {
-        // The API seems to expect a country code. We will assume the user enters a province in Spain.
-        requestBody.job_country_code_or = ["ES"];
-        // We can add the specific province to the general query text
-        generalQuery += input.location;
+        queryParams.append('location', input.location);
     }
-
-    // Assign the combined query to the request body if it's not empty
-    if (generalQuery.trim()) {
-        requestBody.q = generalQuery.trim();
+    if (input.contractType) {
+        queryParams.append('contractType', input.contractType);
     }
     
-    // Clean up empty q_and
-    if (requestBody.q_and.length === 0) {
-        delete requestBody.q_and;
-    }
-
+    const fullUrl = `${proxyServerUrl}/api/jobs?${queryParams.toString()}`;
 
     try {
-        console.log('Sending request to theirStack with body:', JSON.stringify(requestBody, null, 2));
+        console.log(`Calling proxy server to find jobs: ${fullUrl}`);
 
-        const response = await fetch(`https://api.theirstack.com/v1/jobs/search`, {
-            method: 'POST',
+        const response = await fetch(fullUrl, {
+            method: 'GET',
             headers: {
-                'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
             },
-            body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
             const errorBody = await response.text();
-            console.error('TheirStack API Error:', `Status: ${response.status}`, `Body: ${errorBody}`);
-            throw new Error(`Failed to fetch job offers from theirStack: ${response.statusText}`);
+            console.error('Proxy Server Error:', `Status: ${response.status}`, `Body: ${errorBody}`);
+            throw new Error(`Failed to fetch job offers from proxy server: ${response.statusText}`);
         }
 
-        const data = await response.json();
-        const jobs = data.jobs || [];
-        
-        console.log(`Found ${jobs.length} jobs from TheirStack.`);
+        const jobs = await response.json();
+        console.log(`Found ${jobs.length} jobs from the proxy server.`);
 
-        return jobs.map((job: any) => ({
-            id: job.id,
-            title: job.title,
-            companyName: job.company_name,
-            companyLogo: job.company_logo,
-            perks: job.perks || [],
-            salary: job.salary_range ? `${job.salary_range.min} - ${job.salary_range.max} ${job.salary_range.currency}`: null,
-            location: job.location,
-            url: job.url,
-            technologies: job.technologies || [],
-        }));
+        return jobs;
     } catch (error) {
         console.error('Error in findJobOffersFlow:', error);
         return [];
