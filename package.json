@@ -11,7 +11,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "server": "node server.js"
+    "server": "node server.js",
+    "test:api": "node test-api.js"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",
