@@ -90,7 +90,7 @@ export async function findJobs(input: { keyword: string; province: string }): Pr
         return salaryText.trim();
     }
 
-    const jobs = (data.results || []).map((job: any) => {
+    const jobs = (data.hits || []).map((job: any) => {
         return {
             id: job.id,
             title: job.job_title,
