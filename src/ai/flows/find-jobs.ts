@@ -16,9 +16,6 @@ import { z } from 'zod';
 const FindJobsInputSchema = z.object({
   keyword: z.string().describe("The main skill or keyword, e.g., 'React', 'Marketing Digital'."),
   province: z.string().describe("The province in Spain, e.g., 'Madrid', 'Barcelona'."),
-  // NOTE: Temporarily removing contractType and experienceLevel as they are not supported by the API in this way.
-  // contractType: z.string().describe("The type of contract, e.g., 'Jornada completa', 'Autónomo'."),
-  // experienceLevel: z.string().describe("The required experience level, e.g., 'Senior', 'Junior'."),
 });
 export type FindJobsInput = z.infer<typeof FindJobsInputSchema>;
 
@@ -45,27 +42,17 @@ export async function findJobs(input: { keyword: string; province: string }): Pr
       throw new Error('THEIRSTACK_API key is not configured.');
     }
 
-    // Base request body
-    const requestBody: any = {
-        include_total_results: false,
-        order_by: [{ field: "date_posted", desc: true }],
-        posted_at_max_age_days: 30,
-        job_country_code_or: ["ES"],
-        scraper_name_pattern_or: ["infojobs", "indeed", "linkedin"],
+    // Hardcoded request body for testing
+    const requestBody = {
         page: 0,
         limit: 3,
-        blur_company_data: false,
+        job_country_code_or: ['ES'],
+        posted_at_max_age_days: 30,
+        include_total_results: false,
+        order_by: [{ field: "date_posted", desc: true }],
+        scraper_name_pattern_or: ["infojobs", "indeed", "linkedin"],
+        blur_company_data: false
     };
-    
-    // Add keyword to query if it's not 'all'
-    if (input.keyword && input.keyword !== 'all') {
-        requestBody.q = input.keyword;
-    }
-    
-    // Add province if it's not 'all'
-    if (input.province && input.province !== 'all') {
-        requestBody.job_locations_or = [input.province];
-    }
     
     const response = await fetch("https://api.theirstack.com/v1/jobs/search", {
         method: 'POST',
