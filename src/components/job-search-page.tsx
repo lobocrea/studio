@@ -61,6 +61,7 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
   };
   
   return (
+    <>
     <div className="w-full max-w-7xl flex flex-col md:flex-row gap-8">
         <aside className="w-full md:w-1/3 lg:w-1/4">
             <Card className="glassmorphism-card sticky top-24">
@@ -144,7 +145,7 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Cualquier experiencia" />
-                                                </Trigger>
+                                                </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
                                                 <SelectItem value="all">Cualquier experiencia</SelectItem>
@@ -184,5 +185,6 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
             </div>
         </main>
     </div>
+    </>
   );
 }
