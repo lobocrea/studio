@@ -120,6 +120,7 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel className="flex items-center gap-2"><Briefcase size={14} /> Tipo de contrato</FormLabel>
+
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>
