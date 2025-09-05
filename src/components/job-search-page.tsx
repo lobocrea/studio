@@ -36,9 +36,7 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(searchFormSchema),
     defaultValues: {
-      // Pre-fill with the first skill from the user's CV if available
       keyword: initialSkills.length > 0 ? initialSkills[0] : 'all',
-      // Find a matching province from the user's location
       province: allProvinces.find(p => initialLocation?.includes(p)) || 'all',
       contractType: 'all',
       experienceLevel: 'all',
@@ -169,7 +167,6 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
         </aside>
         <main className="flex-1">
             <div className="space-y-4">
-                {/* Search results will be displayed here */}
                 {isSearching && (
                     <div className="flex justify-center items-center p-12">
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
