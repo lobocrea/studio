@@ -56,11 +56,10 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
     setSearchResults([]);
 
     try {
+        // We only pass the simplified parameters to the findJobs function
         const searchParams = {
             keyword: values.keyword || 'all',
             province: values.province || 'all',
-            contractType: values.contractType || 'all',
-            experienceLevel: values.experienceLevel || 'all',
         };
         const result = await findJobs(searchParams);
         setSearchResults(result.jobs);

@@ -16,8 +16,9 @@ import { z } from 'zod';
 const FindJobsInputSchema = z.object({
   keyword: z.string().describe("The main skill or keyword, e.g., 'React', 'Marketing Digital'."),
   province: z.string().describe("The province in Spain, e.g., 'Madrid', 'Barcelona'."),
-  contractType: z.string().describe("The type of contract, e.g., 'Jornada completa', 'Autónomo'."),
-  experienceLevel: z.string().describe("The required experience level, e.g., 'Senior', 'Junior'."),
+  // NOTE: Temporarily removing contractType and experienceLevel as they are not supported by the API in this way.
+  // contractType: z.string().describe("The type of contract, e.g., 'Jornada completa', 'Autónomo'."),
+  // experienceLevel: z.string().describe("The required experience level, e.g., 'Senior', 'Junior'."),
 });
 export type FindJobsInput = z.infer<typeof FindJobsInputSchema>;
 
@@ -37,7 +38,8 @@ const FindJobsOutputSchema = z.object({
 export type FindJobsOutput = z.infer<typeof FindJobsOutputSchema>;
 
 
-export async function findJobs(input: FindJobsInput): Promise<FindJobsOutput> {
+// The input type is simplified to only include fields we are sure the API can process.
+export async function findJobs(input: { keyword: string; province: string }): Promise<FindJobsOutput> {
     const apiKey = process.env.THEIRSTACK_API;
     if (!apiKey) {
       throw new Error('THEIRSTACK_API key is not configured.');
@@ -65,10 +67,6 @@ export async function findJobs(input: FindJobsInput): Promise<FindJobsOutput> {
         requestBody.job_locations_or = [input.province];
     }
     
-    // NOTE: Temporarily removing contractType and experienceLevel from the query
-    // as they are likely causing the Unprocessable Entity error.
-    // The API expects these as specific enum values or not at all, not as free text in 'q'.
-
     const response = await fetch("https://api.theirstack.com/v1/jobs/search", {
         method: 'POST',
         headers: {
