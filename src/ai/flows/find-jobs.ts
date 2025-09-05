@@ -54,6 +54,8 @@ export async function findJobs(input: { keyword: string; province: string }): Pr
         blur_company_data: false
     };
     
+    console.log('Sending to TheirStack API:', JSON.stringify(requestBody, null, 2));
+
     const response = await fetch("https://api.theirstack.com/v1/jobs/search", {
         method: 'POST',
         headers: {
@@ -71,6 +73,8 @@ export async function findJobs(input: { keyword: string; province: string }): Pr
     }
 
     const data = await response.json();
+    console.log('Received from TheirStack API:', JSON.stringify(data, null, 2));
+
 
     const getModality = (title: string, description: string): string => {
         const lowerTitle = title.toLowerCase();
