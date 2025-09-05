@@ -2,24 +2,20 @@
 'use server';
 
 /**
- * @fileOverview A flow to find job offers using the TheirStack API.
+ * @fileOverview A server action to find job offers using the TheirStack API.
  *
- * This flow queries the TheirStack API for real job listings based on user criteria.
+ * This function queries the TheirStack API for real job listings based on user criteria.
  *
  * - findJobs - A function that handles the job search process.
  * - FindJobsInput - The input type for the findJobs function.
  * - FindJobsOutput - The return type for the findJobs function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 
 const FindJobsInputSchema = z.object({
   keyword: z.string().describe("The main skill or keyword, e.g., 'React', 'Marketing Digital'."),
   province: z.string().describe("The province in Spain, e.g., 'Madrid', 'Barcelona'."),
-  // The API doesn't seem to have direct mapping for contractType or experienceLevel from the curl example
-  // They might be searchable via the `q` parameter or other fields not shown.
-  // For now, they are included in the schema but not used in the API call.
   contractType: z.string().describe("The type of contract, e.g., 'Jornada completa', 'Autónomo'."),
   experienceLevel: z.string().describe("The required experience level, e.g., 'Senior', 'Junior'."),
 });
@@ -42,23 +38,11 @@ export type FindJobsOutput = z.infer<typeof FindJobsOutputSchema>;
 
 
 export async function findJobs(input: FindJobsInput): Promise<FindJobsOutput> {
-  return findJobsFlow(input);
-}
-
-
-const findJobsFlow = ai.defineFlow(
-  {
-    name: 'findJobsFlow',
-    inputSchema: FindJobsInputSchema,
-    outputSchema: FindJobsOutputSchema,
-  },
-  async (input) => {
     const apiKey = process.env.THEIRSTACK_API;
     if (!apiKey) {
       throw new Error('THEIRSTACK_API key is not configured.');
     }
 
-    // Build the query string, combining keyword and experience level
     const queryParts = [];
     if (input.keyword && input.keyword !== 'all') {
       queryParts.push(input.keyword);
@@ -70,7 +54,7 @@ const findJobsFlow = ai.defineFlow(
     const requestBody: any = {
         include_total_results: false,
         order_by: [{ field: "date_posted", desc: true }],
-        posted_at_max_age_days: 30, // Increased to get more results
+        posted_at_max_age_days: 30,
         job_country_code_or: ["ES"],
         scraper_name_pattern_or: ["infojobs", "indeed", "linkedin"],
         page: 0,
@@ -83,7 +67,6 @@ const findJobsFlow = ai.defineFlow(
         requestBody.job_locations_or = [input.province];
     }
      if (input.contractType && input.contractType !== 'all') {
-        // This is a free text search, so we can add the contract type to the query
         requestBody.q = `${requestBody.q || ''} ${input.contractType}`.trim();
     }
 
@@ -106,40 +89,35 @@ const findJobsFlow = ai.defineFlow(
 
     const data = await response.json();
 
-    // Map the API response to our JobOfferSchema
-    const jobs = (data.results || []).map((job: any) => {
-        // A helper to determine modality
-        const getModality = (title: string, description: string): string => {
-            const lowerTitle = title.toLowerCase();
-            const lowerDesc = description.toLowerCase();
-            if (lowerTitle.includes('remoto') || lowerDesc.includes('remoto') || lowerTitle.includes('remote') || lowerDesc.includes('remote')) return 'Remoto';
-            if (lowerTitle.includes('híbrido') || lowerDesc.includes('híbrido') || lowerTitle.includes('hybrid') || lowerDesc.includes('hybrid')) return 'Híbrido';
-            return 'Presencial';
-        }
-        
-        // Helper to format salary
-        const formatSalary = (min?: number, max?: number, currency?: string, interval?: string): string | undefined => {
-            if (!min && !max) return undefined;
-            const moneyFormat = new Intl.NumberFormat('es-ES', { style: 'currency', currency: currency || 'EUR', minimumFractionDigits: 0 });
-            let salaryText = '';
-            if (min) salaryText += moneyFormat.format(min);
-            if (max) salaryText += ` - ${moneyFormat.format(max)}`;
-            if (interval) salaryText += ` ${interval}`;
-            return salaryText.trim();
-        }
+    const getModality = (title: string, description: string): string => {
+        const lowerTitle = title.toLowerCase();
+        const lowerDesc = description.toLowerCase();
+        if (lowerTitle.includes('remoto') || lowerDesc.includes('remoto') || lowerTitle.includes('remote') || lowerDesc.includes('remote')) return 'Remoto';
+        if (lowerTitle.includes('híbrido') || lowerDesc.includes('híbrido') || lowerTitle.includes('hybrid') || lowerDesc.includes('hybrid')) return 'Híbrido';
+        return 'Presencial';
+    }
+    
+    const formatSalary = (min?: number, max?: number, currency?: string, interval?: string): string | undefined => {
+        if (!min && !max) return undefined;
+        const moneyFormat = new Intl.NumberFormat('es-ES', { style: 'currency', currency: currency || 'EUR', minimumFractionDigits: 0 });
+        let salaryText = '';
+        if (min) salaryText += moneyFormat.format(min);
+        if (max) salaryText += ` - ${moneyFormat.format(max)}`;
+        if (interval) salaryText += ` ${interval}`;
+        return salaryText.trim();
+    }
 
+    const jobs = (data.results || []).map((job: any) => {
         return {
             id: job.id,
             title: job.job_title,
             company: job.company_name || 'Confidencial',
             location: job.job_locations?.[0] || 'Ubicación no especificada',
             salary: formatSalary(job.job_salary_min, job.job_salary_max, job.job_salary_currency, job.job_salary_interval),
-            // Truncate description for brevity in the card
             description: job.job_description?.substring(0, 150) + '...' || 'Sin descripción.',
             modality: getModality(job.job_title, job.job_description || ''),
         };
     });
 
     return { jobs };
-  }
-);
+}
