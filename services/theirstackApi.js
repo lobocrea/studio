@@ -3,7 +3,6 @@ const axios = require('axios');
 
 class TheirStackAPI {
   constructor() {
-    this.baseUrl = 'https://api.theirstack.com/v1';
     this.apiKey = process.env.THEIRSTACK_API_KEY;
   }
 
@@ -24,7 +23,7 @@ class TheirStackAPI {
         country: 'ES' // España para InfoJobs
       };
 
-      const response = await axios.get(`${this.baseUrl}/jobs`, {
+      const response = await axios.get('https://api.theirstack.com/v1/jobs', {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json'
@@ -67,7 +66,7 @@ class TheirStackAPI {
         return { available: false, error: 'API key no configurada' };
       }
 
-      const response = await axios.get(`${this.baseUrl}/health`, {
+      const response = await axios.get('https://api.theirstack.com/health', {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`
         },
@@ -90,7 +89,7 @@ class TheirStackAPI {
   // Método para obtener información de la API
   async getApiInfo() {
     try {
-      const response = await axios.get(`${this.baseUrl}/info`, {
+      const response = await axios.get('https://api.theirstack.com/info', {
         timeout: 10000
       });
       return response.data;
