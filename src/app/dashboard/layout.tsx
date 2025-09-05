@@ -1,7 +1,7 @@
 
 import { Sidebar, SidebarContent, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { Briefcase, FileText, Files, User, FlaskConical } from "lucide-react";
+import { Briefcase, FileText, Files, User } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -58,11 +58,14 @@ export default async function DashboardLayout({
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
-        <main className="relative flex min-h-screen flex-col items-center p-4 bg-lava-lamp">
+        <main className="relative flex min-h-screen flex-col items-center p-4">
+          <div className="bg-lava-lamp absolute inset-0 z-0" />
           <div className="absolute top-4 left-4 z-20 md:hidden">
             <SidebarTrigger />
           </div>
-          {children}
+          <div className="relative z-10 w-full h-full">
+            {children}
+          </div>
         </main>
       </SidebarInset>
     </SidebarProvider>
