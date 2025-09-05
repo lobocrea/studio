@@ -12,22 +12,35 @@ export default async function JobsDashboardPage() {
         redirect('/');
     }
 
-    // Fetch the most recent CV for the logged-in user to get skills
+    // Fetch all unique skills for the logged-in user
+    const { data: skillsData, error: skillsError } = await supabase
+        .from('skills')
+        .select('skill_name')
+        .eq('worker_id', user.id);
+
+    // We can show a message if there is no skills data.
+    if (skillsError) {
+        console.warn('Could not fetch skills data for user, job search filters will be empty.');
+    }
+    
+    // Process skills to get a unique list of strings
+    const uniqueSkills = skillsData 
+        ? [...new Set(skillsData.map(s => s.skill_name))] 
+        : [];
+
+    // Fetch the most recent CV just to get the location
     const { data: cvData, error: cvError } = await supabase
         .from('cvs')
-        .select('skills, contact_info')
+        .select('contact_info')
         .eq('worker_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
     
-    // Type assertion for skills and contact info
-    const skills = (cvData?.skills as { tecnicas?: string[] })?.tecnicas || [];
     const location = (cvData?.contact_info as { ubicacion?: string })?.ubicacion || '';
     
-    // We can show a message if there is no CV to get data from.
     if (cvError) {
-        console.warn('Could not fetch CV data for user, job search filters will be empty.');
+        console.warn('Could not fetch CV data for user location.');
     }
     
     return (
@@ -40,7 +53,7 @@ export default async function JobsDashboardPage() {
                     Utiliza nuestros filtros inteligentes para encontrar las mejores ofertas de trabajo para ti.
                 </p>
             </header>
-            <JobSearchPage initialSkills={skills} initialLocation={location} />
+            <JobSearchPage initialSkills={uniqueSkills} initialLocation={location} />
         </div>
     )
 }
