@@ -38,7 +38,7 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
     resolver: zodResolver(searchFormSchema),
     defaultValues: {
       // Pre-fill with the first skill from the user's CV if available
-      keyword: initialSkills.length > 0 ? initialSkills[0] : '',
+      keyword: initialSkills.length > 0 ? initialSkills[0] : 'all',
       // Find a matching province from the user's location
       province: allProvinces.find(p => initialLocation?.includes(p)) || 'all',
       contractType: 'all',
@@ -76,9 +76,19 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel className="flex items-center gap-2"><Search size={14} /> Palabras clave</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Ej: React, Node.js..." {...field} />
-                                        </FormControl>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecciona una habilidad" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="all">Cualquier habilidad</SelectItem>
+                                                {initialSkills.map(skill => (
+                                                    <SelectItem key={skill} value={skill}>{skill}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </FormItem>
                                 )}
                             />
@@ -92,7 +102,7 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Selecciona una provincia" />
-                                                </SelectTrigger>
+                                                </Trigger>
                                             </FormControl>
                                             <SelectContent>
                                                 <SelectItem value="all">Todas las provincias</SelectItem>
@@ -114,7 +124,7 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Cualquier contrato" />
-                                                </SelectTrigger>
+                                                </Trigger>
                                             </FormControl>
                                             <SelectContent>
                                                 <SelectItem value="all">Cualquier contrato</SelectItem>
@@ -136,7 +146,7 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Cualquier experiencia" />
-                                                </SelectTrigger>
+                                                </Trigger>
                                             </FormControl>
                                             <SelectContent>
                                                 <SelectItem value="all">Cualquier experiencia</SelectItem>
