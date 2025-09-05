@@ -30,7 +30,7 @@ type SearchFormValues = z.infer<typeof searchFormSchema>;
 
 export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageProps) {
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<any[]>([]); // TODO: Define type for job offers
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const { toast } = useToast();
 
   const form = useForm<SearchFormValues>({
@@ -99,7 +99,7 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Selecciona una provincia" />
-                                                </Trigger>
+                                                </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
                                                 <SelectItem value="all">Todas las provincias</SelectItem>
@@ -122,7 +122,7 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder="Cualquier contrato" />
-                                                </Trigger>
+                                                </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
                                                 <SelectItem value="all">Cualquier contrato</SelectItem>
