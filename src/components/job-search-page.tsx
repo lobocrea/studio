@@ -10,9 +10,9 @@ import { z } from 'zod';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from './ui/form';
-import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue } from './ui/select';
 import { JobOffersList } from './job-offers-page';
+import { allProvinces } from '@/lib/provinces';
 
 type JobSearchPageProps = {
     userSkills: string[];
@@ -36,8 +36,8 @@ export function JobSearchPage({ userSkills }: JobSearchPageProps) {
         resolver: zodResolver(searchFormSchema),
         defaultValues: {
             skill: '',
-            location: 'España',
-            contractType: 'all', // Use 'all' as the default value
+            location: '',
+            contractType: 'all',
         },
     });
 
@@ -49,7 +49,6 @@ export function JobSearchPage({ userSkills }: JobSearchPageProps) {
             const results = await findJobOffers({
                 skill: values.skill,
                 location: values.location,
-                // Pass contractType only if it's not 'all'
                 contractType: values.contractType === 'all' ? undefined : values.contractType,
                 limit: 20, 
             });
@@ -107,9 +106,19 @@ export function JobSearchPage({ userSkills }: JobSearchPageProps) {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Provincia</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Ej: Madrid" {...field} />
-                                        </FormControl>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecciona una provincia..." />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="">Toda España</SelectItem>
+                                                {allProvinces.map(province => (
+                                                    <SelectItem key={province} value={province}>{province}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                     </FormItem>
                                 )}
