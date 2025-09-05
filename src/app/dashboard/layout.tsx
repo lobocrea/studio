@@ -46,22 +46,6 @@ export default async function DashboardLayout({
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-                 <SidebarMenuButton asChild>
-                    <Link href="/dashboard/jobs">
-                        <Briefcase />
-                        Listado de Empleos
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                 <SidebarMenuButton asChild>
-                    <Link href="/dashboard/test-api">
-                        <FlaskConical />
-                        Test API
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>

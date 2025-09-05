@@ -75,11 +75,6 @@ export function CvOptimizer() {
   const { toast } = useToast();
   const supabase = createSupabaseBrowserClient();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: getInitialFormValues(),
-  });
-
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -184,7 +179,7 @@ export function CvOptimizer() {
           description: 'Hemos guardado y generado tu nuevo CV con éxito.',
         });
         // Redirect to the jobs page after successful generation
-        router.push('/dashboard/jobs');
+        router.push('/dashboard/cvs');
       } else {
         throw new Error('Save operation failed silently.');
       }
@@ -347,7 +342,7 @@ export function CvOptimizer() {
                     <Button type="button" variant="outline" onClick={startOver}>Cancelar</Button>
                     <Button type="submit" disabled={isGenerating}>
                         {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                        {isGenerating ? 'Guardando y Generando...' : 'Generar CV y Buscar Empleos'}
+                        {isGenerating ? 'Guardando y Generando...' : 'Generar y Guardar CV'}
                     </Button>
                 </CardFooter>
               </form>
