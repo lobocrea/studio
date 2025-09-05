@@ -51,7 +51,7 @@ export async function findJobs(input: FindJobsInput): Promise<FindJobsOutput> {
         job_country_code_or: ["ES"],
         scraper_name_pattern_or: ["infojobs", "indeed", "linkedin"],
         page: 0,
-        limit: 15,
+        limit: 3,
         blur_company_data: false,
     };
     
