@@ -43,17 +43,7 @@ export async function findJobs(input: FindJobsInput): Promise<FindJobsOutput> {
       throw new Error('THEIRSTACK_API key is not configured.');
     }
 
-    const queryParts = [];
-    if (input.keyword && input.keyword !== 'all') {
-      queryParts.push(input.keyword);
-    }
-     if (input.experienceLevel && input.experienceLevel !== 'all') {
-      queryParts.push(input.experienceLevel);
-    }
-     if (input.contractType && input.contractType !== 'all') {
-        queryParts.push(input.contractType);
-    }
-
+    // Base request body
     const requestBody: any = {
         include_total_results: false,
         order_by: [{ field: "date_posted", desc: true }],
@@ -63,13 +53,21 @@ export async function findJobs(input: FindJobsInput): Promise<FindJobsOutput> {
         page: 0,
         limit: 15,
         blur_company_data: false,
-        q: queryParts.join(' '),
     };
-
+    
+    // Add keyword to query if it's not 'all'
+    if (input.keyword && input.keyword !== 'all') {
+        requestBody.q = input.keyword;
+    }
+    
+    // Add province if it's not 'all'
     if (input.province && input.province !== 'all') {
         requestBody.job_locations_or = [input.province];
     }
     
+    // NOTE: Temporarily removing contractType and experienceLevel from the query
+    // as they are likely causing the Unprocessable Entity error.
+    // The API expects these as specific enum values or not at all, not as free text in 'q'.
 
     const response = await fetch("https://api.theirstack.com/v1/jobs/search", {
         method: 'POST',
