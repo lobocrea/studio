@@ -14,10 +14,11 @@ class TheirStackAPI {
 
       console.log('🌐 Usando TheirStack API para buscar trabajos de InfoJobs...');
       
-      const query_and = [keyword, contractType, location === 'all' ? '' : location].filter(Boolean);
+      // Combinar todos los términos de búsqueda en el campo 'q'
+      const searchTerms = [keyword, contractType, location === 'all' ? '' : location].filter(Boolean);
+      const queryString = searchTerms.join(' ');
 
       const requestBody = {
-        q_and: query_and,
         job_country_code_or: ['ES'],
         job_source_or: ['infojobs'],
         posted_at_max_age_days: 30,
@@ -25,8 +26,9 @@ class TheirStackAPI {
         offset: 0
       };
       
-      if (query_and.length === 0) {
-        delete requestBody.q_and;
+      // Añadir 'q' solo si hay términos de búsqueda
+      if (queryString) {
+        requestBody.q = queryString;
       }
 
       console.log('🔍 Cuerpo de la petición a TheirStack:', JSON.stringify(requestBody, null, 2));
