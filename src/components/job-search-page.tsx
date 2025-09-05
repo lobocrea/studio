@@ -36,7 +36,7 @@ export function JobSearchPage({ userSkills }: JobSearchPageProps) {
         resolver: zodResolver(searchFormSchema),
         defaultValues: {
             skill: '',
-            location: '',
+            location: 'all',
             contractType: 'all',
         },
     });
@@ -48,7 +48,7 @@ export function JobSearchPage({ userSkills }: JobSearchPageProps) {
         try {
             const results = await findJobOffers({
                 skill: values.skill,
-                location: values.location,
+                location: values.location === 'all' ? undefined : values.location,
                 contractType: values.contractType === 'all' ? undefined : values.contractType,
                 limit: 20, 
             });
@@ -113,7 +113,7 @@ export function JobSearchPage({ userSkills }: JobSearchPageProps) {
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="">Toda España</SelectItem>
+                                                <SelectItem value="all">Toda España</SelectItem>
                                                 {allProvinces.map(province => (
                                                     <SelectItem key={province} value={province}>{province}</SelectItem>
                                                 ))}

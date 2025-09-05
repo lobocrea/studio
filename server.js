@@ -20,7 +20,7 @@ class TheirStackAPI {
     this.apiKey = process.env.THEIRSTACK_API_KEY;
   }
 
-  async searchJobs({ keyword = '', location = '', limit = 10, contractType = '' }) {
+  async searchJobs({ keyword = '', location = '', contractType = '', limit = 10 }) {
     try {
       if (!this.apiKey) {
         throw new Error('THEIRSTACK_API_KEY debe estar configurado en las variables de entorno');
@@ -28,15 +28,20 @@ class TheirStackAPI {
 
       console.log('🌐 Usando TheirStack API para buscar trabajos de InfoJobs...');
       
-      const query_and = [keyword, contractType].filter(Boolean);
+      const query_and = [keyword, contractType, location === 'all' ? '' : location].filter(Boolean);
 
       const requestBody = {
         q_and: query_and,
-        job_country_code_or: [location || 'ES'],
+        job_country_code_or: ['ES'],
         job_source_or: ['infojobs'],
+        posted_at_max_age_days: 30,
         limit: limit,
         offset: 0
       };
+      
+      if (query_and.length === 0) {
+        delete requestBody.q_and;
+      }
 
       console.log('🔍 Cuerpo de la petición a TheirStack:', JSON.stringify(requestBody, null, 2));
 
@@ -77,7 +82,6 @@ class TheirStackAPI {
         return { available: false, error: 'API key no configurada' };
       }
 
-      // El endpoint de health podría estar en la raíz, no en /v1
       const response = await axios.get(`https://api.theirstack.com/health`, {
         headers: { 'Authorization': `Bearer ${this.apiKey}` },
         timeout: 10000
