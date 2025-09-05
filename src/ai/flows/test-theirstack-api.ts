@@ -10,6 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import type { JobOffer } from './find-job-offers';
+import axios from 'axios';
 
 const ApiResponseSchema = z.object({
   available: z.boolean(),
@@ -17,7 +18,7 @@ const ApiResponseSchema = z.object({
     success: z.boolean(),
     message: z.string(),
     resultsCount: z.number().optional(),
-    jobs: z.array(z.any()).optional(), // Allow any structure for jobs for now
+    jobs: z.array(z.any()).optional(),
   }),
   status: z.number().optional(),
   error: z.string().optional(),
@@ -78,6 +79,7 @@ const testTheirStackApiFlow = ai.defineFlow(
     // 2. Perform a test search via Proxy
     try {
         console.log('Performing search test via proxy...');
+        // Use GET request with query params to hit our proxy's /api/jobs endpoint
         const queryParams = new URLSearchParams({
             skill: 'fullstack',
             limit: '3',

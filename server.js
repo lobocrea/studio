@@ -16,11 +16,11 @@ app.use(express.json());
 
 class TheirStackAPI {
   constructor() {
-    this.baseUrl = 'https://api.theirstack.com';
+    this.baseUrl = 'https://api.theirstack.com/v1';
     this.apiKey = process.env.THEIRSTACK_API_KEY;
   }
 
-  async searchJobs({ keyword = '', location = '', limit = 20, contractType = '' }) {
+  async searchJobs({ keyword = '', location = '', limit = 10, contractType = '' }) {
     try {
       if (!this.apiKey) {
         throw new Error('THEIRSTACK_API_KEY debe estar configurado en las variables de entorno');
@@ -28,29 +28,26 @@ class TheirStackAPI {
 
       console.log('🌐 Usando TheirStack API para buscar trabajos de InfoJobs...');
       
-      // Combinar keyword y contractType en la query principal si ambos existen
-      const mainQuery = [keyword, contractType].filter(Boolean).join(' ');
+      const query_and = [keyword, contractType].filter(Boolean);
 
-      const params = {
-        q: mainQuery || 'desarrollador', // Usar 'desarrollador' como fallback si no hay query
-        location: location || 'España', // Usar 'España' como fallback
+      const requestBody = {
+        q_and: query_and,
+        job_country_code_or: [location || 'ES'],
+        job_source_or: ['infojobs'],
         limit: limit,
-        source: 'infojobs',
-        country: 'ES'
+        offset: 0
       };
 
-      console.log('🔍 Parámetros de búsqueda para TheirStack:', params);
+      console.log('🔍 Cuerpo de la petición a TheirStack:', JSON.stringify(requestBody, null, 2));
 
-      const response = await axios.get(`${this.baseUrl}/jobs`, {
+      const response = await axios.post(`${this.baseUrl}/jobs/search`, requestBody, {
         headers: {
           'Authorization': `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json'
         },
-        params: params,
         timeout: 30000
       });
 
-      // Mapear la respuesta al formato que espera el frontend
       const jobs = response.data.jobs?.map(job => ({
         id: job.id || `theirstack-${Date.now()}-${Math.random()}`,
         title: job.job_title || job.title,
@@ -60,7 +57,6 @@ class TheirStackAPI {
         description: job.description,
         url: job.url || job.final_url,
         technologies: job.technology_names || job.company_keywords || [],
-        // Añadimos campos que el frontend podría esperar
         companyLogo: job.logo_url || null, 
         perks: job.perks || [],
       })) || [];
@@ -81,7 +77,8 @@ class TheirStackAPI {
         return { available: false, error: 'API key no configurada' };
       }
 
-      const response = await axios.get(`${this.baseUrl}/health`, {
+      // El endpoint de health podría estar en la raíz, no en /v1
+      const response = await axios.get(`https://api.theirstack.com/health`, {
         headers: { 'Authorization': `Bearer ${this.apiKey}` },
         timeout: 10000
       });
