@@ -9,7 +9,6 @@ import { z } from 'zod';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel } from './ui/form';
-import { Input } from './ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { allProvinces } from '@/lib/provinces';
 import { contractTypes, experienceLevels } from '@/lib/job-options';
