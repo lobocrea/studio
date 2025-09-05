@@ -38,6 +38,14 @@ export default async function DashboardLayout({
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>
+             <SidebarMenuItem>
+                 <SidebarMenuButton asChild>
+                    <Link href="/dashboard/jobs">
+                        <Briefcase />
+                        Buscar Empleos
+                    </Link>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarMenuItem>
                  <SidebarMenuButton asChild>
                     <Link href="/dashboard/profile">
