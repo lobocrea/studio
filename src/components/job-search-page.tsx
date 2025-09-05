@@ -1,9 +1,8 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Briefcase, Loader2, MapPin, Search, Star } from 'lucide-react';
-import React, { useState } from 'react';
+import React, 'useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from './ui/button';
@@ -13,6 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { allProvinces } from '@/lib/provinces';
 import { contractTypes, experienceLevels } from '@/lib/job-options';
 import { useToast } from '@/hooks/use-toast';
+import { findJobs } from '@/ai/flows/find-jobs';
+import type { FindJobsOutput } from '@/ai/flows/find-jobs';
+import { JobResultCard } from './job-result-card';
+
 
 type JobSearchPageProps = {
     initialSkills: string[];
@@ -28,9 +31,12 @@ const searchFormSchema = z.object({
 
 type SearchFormValues = z.infer<typeof searchFormSchema>;
 
+type JobOffer = FindJobsOutput['jobs'][0];
+
 export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageProps) {
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<JobOffer[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<SearchFormValues>({
@@ -45,19 +51,28 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
 
   const handleSearch = async (values: SearchFormValues) => {
     setIsSearching(true);
+    setHasSearched(true);
     setSearchResults([]);
-    console.log('Searching for jobs with values:', values);
-    
-    // NOTE: This is a placeholder for the actual API call.
-    // We'll implement the Genkit flow and the API call in the next steps.
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    toast({
-      title: 'Búsqueda de Empleos No Implementada',
-      description: 'La funcionalidad de búsqueda real se conectará en los próximos pasos.',
-    });
 
-    setIsSearching(false);
+    try {
+        const searchParams = {
+            keyword: values.keyword === 'all' ? 'developer' : values.keyword || 'developer',
+            province: values.province === 'all' ? 'Madrid' : values.province || 'Madrid',
+            contractType: values.contractType === 'all' ? 'Jornada completa' : values.contractType || 'Jornada completa',
+            experienceLevel: values.experienceLevel === 'all' ? 'Senior' : values.experienceLevel || 'Senior',
+        };
+        const result = await findJobs(searchParams);
+        setSearchResults(result.jobs);
+    } catch (error) {
+        console.error("Error searching for jobs:", error);
+        toast({
+            variant: "destructive",
+            title: "Error en la búsqueda",
+            description: "No se pudieron obtener las ofertas de trabajo. Por favor, inténtalo de nuevo.",
+        });
+    } finally {
+        setIsSearching(false);
+    }
   };
   
   return (
@@ -128,7 +143,7 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
                                             <SelectContent>
                                                 <SelectItem value="all">Cualquier contrato</SelectItem>
                                                 {contractTypes.map(type => (
-                                                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                                                    <SelectItem key={type.value} value={type.label}>{type.label}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -150,7 +165,7 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
                                             <SelectContent>
                                                 <SelectItem value="all">Cualquier experiencia</SelectItem>
                                                  {experienceLevels.map(level => (
-                                                    <SelectItem key={level.value} value={level.value}>{level.label}</SelectItem>
+                                                    <SelectItem key={level.value} value={level.label}>{level.label}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -169,12 +184,26 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
         <main className="flex-1">
             <div className="space-y-4">
                 {isSearching && (
-                    <div className="flex justify-center items-center p-12">
+                    <div className="flex flex-col items-center justify-center p-12 gap-4">
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        <p className="text-muted-foreground">Buscando las mejores ofertas para ti...</p>
                     </div>
                 )}
 
-                {!isSearching && searchResults.length === 0 && (
+                {!isSearching && hasSearched && searchResults.length > 0 && (
+                    searchResults.map(job => <JobResultCard key={job.id} job={job} />)
+                )}
+
+                {!isSearching && hasSearched && searchResults.length === 0 && (
+                     <Card className="glassmorphism-card text-center py-24 px-6">
+                        <CardContent>
+                            <h3 className="text-xl font-semibold">No se encontraron resultados</h3>
+                            <p className="text-muted-foreground mt-2">Prueba a cambiar los filtros para ampliar tu búsqueda.</p>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {!hasSearched && (
                      <Card className="glassmorphism-card text-center py-24 px-6">
                         <CardContent>
                             <h3 className="text-xl font-semibold">Comienza tu búsqueda</h3>
