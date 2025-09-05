@@ -3,7 +3,7 @@ const axios = require('axios');
 
 class TheirStackAPI {
   constructor() {
-    this.baseUrl = 'https://api.theirstack.com';
+    this.baseUrl = 'https://api.theirstack.com/v1';
     this.apiKey = process.env.THEIRSTACK_API_KEY;
   }
 
