@@ -48,7 +48,7 @@ export default async function DashboardLayout({
             </SidebarMenuItem>
             <SidebarMenuItem>
                  <SidebarMenuButton asChild>
-                    <Link href="/dashboard/profile">
+                    <Link href={`/profile/${user.id}`} target="_blank">
                         <User />
                         CV Online
                     </Link>
@@ -58,8 +58,8 @@ export default async function DashboardLayout({
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
+        <div className="absolute inset-0 -z-10 bg-lava-lamp" />
         <main className="relative flex min-h-screen flex-col items-center p-4">
-          <div className="bg-lava-lamp absolute inset-0 z-0" />
           <div className="absolute top-4 left-4 z-20 md:hidden">
             <SidebarTrigger />
           </div>

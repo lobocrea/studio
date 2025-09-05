@@ -3,7 +3,7 @@
 
 import { saveCvData } from '@/ai/flows/save-cv-data';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Save } from 'lucide-react';
+import { Eye, Loader2, Save } from 'lucide-react';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/types/supabase';
+import Link from 'next/link';
 
 type ProfileFormProps = {
     initialCvData: Tables<'cvs'>;
@@ -219,7 +220,13 @@ export function ProfileForm({ initialCvData, initialWorkerData }: ProfileFormPro
                         </CardContent></Card>
 
                     </CardContent>
-                    <CardFooter className="flex justify-end gap-4">
+                    <CardFooter className="flex justify-between gap-4">
+                        <Button variant="outline" asChild>
+                            <Link href={`/profile/${initialWorkerData.id}`} target="_blank">
+                                <Eye className="mr-2 h-4 w-4" />
+                                Ver Perfil Público
+                            </Link>
+                        </Button>
                         <Button type="submit" disabled={isSaving}>
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             {isSaving ? 'Guardando...' : 'Guardar Cambios'}
