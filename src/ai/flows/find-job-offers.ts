@@ -16,7 +16,7 @@ const JobOfferSchema = z.object({
     id: z.string(),
     title: z.string(),
     companyName: z.string(),
-    companyLogo: z.string().url().optional(),
+    companyLogo: z.string().url().optional().nullable(),
     perks: z.array(z.string()),
     salary: z.string().optional().nullable(),
     location: z.string(),
@@ -55,10 +55,10 @@ const findJobOffersFlow = ai.defineFlow(
     if (input.skill) {
         queryParams.append('skill', input.skill);
     }
-    if (input.location) {
+    if (input.location && input.location !== 'all') {
         queryParams.append('location', input.location);
     }
-    if (input.contractType) {
+    if (input.contractType && input.contractType !== 'all') {
         queryParams.append('contractType', input.contractType);
     }
     
