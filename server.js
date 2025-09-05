@@ -25,13 +25,12 @@ class TheirStackAPI {
         posted_at_max_age_days: 60,
         order_by: [{ field: "date_posted", desc: true }],
         include_total_results: false,
-        q_and: [],
       };
       
       let generalQuery = '';
 
       if (keyword) {
-        requestBody.q_and.push(keyword);
+        generalQuery += `${keyword} `;
       }
       
       if(contractType){
@@ -47,10 +46,6 @@ class TheirStackAPI {
 
       if (generalQuery.trim()) {
         requestBody.q = generalQuery.trim();
-      }
-      
-      if (requestBody.q_and.length === 0) {
-          delete requestBody.q_and;
       }
       
       console.log('Proxy Server: Enviando petición a TheirStack con body:', JSON.stringify(requestBody, null, 2));
