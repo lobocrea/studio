@@ -10,7 +10,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:jobs": "node jobs/test-infojobs-api.js"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",
@@ -39,10 +40,14 @@
     "@radix-ui/react-tooltip": "^1.1.8",
     "@supabase/ssr": "^0.4.0",
     "@supabase/supabase-js": "^2.45.0",
+    "axios": "^1.7.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cors": "^2.8.5",
     "date-fns": "^3.6.0",
+    "dotenv": "^16.4.5",
     "embla-carousel-react": "^8.6.0",
+    "express": "^4.19.2",
     "firebase": "^11.9.1",
     "genkit": "^1.14.1",
     "html2canvas": "^1.4.1",
