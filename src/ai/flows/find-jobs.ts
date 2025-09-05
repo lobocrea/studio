@@ -50,6 +50,9 @@ export async function findJobs(input: FindJobsInput): Promise<FindJobsOutput> {
      if (input.experienceLevel && input.experienceLevel !== 'all') {
       queryParts.push(input.experienceLevel);
     }
+     if (input.contractType && input.contractType !== 'all') {
+        queryParts.push(input.contractType);
+    }
 
     const requestBody: any = {
         include_total_results: false,
@@ -66,10 +69,7 @@ export async function findJobs(input: FindJobsInput): Promise<FindJobsOutput> {
     if (input.province && input.province !== 'all') {
         requestBody.job_locations_or = [input.province];
     }
-     if (input.contractType && input.contractType !== 'all') {
-        requestBody.q = `${requestBody.q || ''} ${input.contractType}`.trim();
-    }
-
+    
 
     const response = await fetch("https://api.theirstack.com/v1/jobs/search", {
         method: 'POST',
@@ -83,7 +83,7 @@ export async function findJobs(input: FindJobsInput): Promise<FindJobsOutput> {
 
     if (!response.ok) {
         const errorBody = await response.text();
-        console.error('TheirStack API Error:', errorBody);
+        console.error('TheirStack API Error:', response.status, errorBody);
         throw new Error(`Failed to fetch jobs from TheirStack API: ${response.statusText}`);
     }
 
@@ -103,7 +103,7 @@ export async function findJobs(input: FindJobsInput): Promise<FindJobsOutput> {
         let salaryText = '';
         if (min) salaryText += moneyFormat.format(min);
         if (max) salaryText += ` - ${moneyFormat.format(max)}`;
-        if (interval) salaryText += ` ${interval}`;
+        if (interval) salaryText += ` Bruto/${interval.charAt(0).toUpperCase() + interval.slice(1)}`;
         return salaryText.trim();
     }
 

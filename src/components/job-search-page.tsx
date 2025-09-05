@@ -57,10 +57,10 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
 
     try {
         const searchParams = {
-            keyword: values.keyword === 'all' ? 'developer' : values.keyword || 'developer',
-            province: values.province === 'all' ? 'Madrid' : values.province || 'Madrid',
-            contractType: values.contractType === 'all' ? 'Jornada completa' : values.contractType || 'Jornada completa',
-            experienceLevel: values.experienceLevel === 'all' ? 'Senior' : values.experienceLevel || 'Senior',
+            keyword: values.keyword || 'all',
+            province: values.province || 'all',
+            contractType: values.contractType || 'all',
+            experienceLevel: values.experienceLevel || 'all',
         };
         const result = await findJobs(searchParams);
         setSearchResults(result.jobs);
@@ -77,7 +77,6 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
   };
   
   return (
-    <>
     <div className="w-full max-w-7xl flex flex-col md:flex-row gap-8">
         <aside className="w-full md:w-1/3 lg:w-1/4">
             <Card className="glassmorphism-card sticky top-24">
@@ -174,7 +173,7 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
                                 )}
                             />
                             <Button type="submit" className="w-full" disabled={isSearching}>
-                                {isSearching ? <Loader2 className="animate-spin" /> : <Search />}
+                                {isSearching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
                                 {isSearching ? 'Buscando...' : 'Buscar'}
                             </Button>
                         </form>
@@ -215,6 +214,5 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
             </div>
         </main>
     </div>
-    </>
   );
 }
