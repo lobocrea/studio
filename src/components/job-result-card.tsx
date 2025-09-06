@@ -12,6 +12,7 @@ type JobOffer = {
   salary?: string;
   description: string;
   modality: string;
+  url: string;
 };
 
 type JobResultCardProps = {
@@ -47,7 +48,12 @@ export function JobResultCard({ job }: JobResultCardProps) {
         <p className="text-muted-foreground text-sm pt-2">{job.description}</p>
       </CardContent>
       <CardFooter className="flex justify-end">
-        <Button variant="outline">
+        <Button 
+          variant="outline" 
+          onClick={() => window.open(job.url, '_blank', 'noopener,noreferrer')}
+          disabled={!job.url || job.url === '#'}
+        >
+          <Globe size={14} className="mr-2" />
           Ver Oferta
         </Button>
       </CardFooter>

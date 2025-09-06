@@ -56,11 +56,14 @@ export function JobSearchPage({ initialSkills, initialLocation }: JobSearchPageP
     setSearchResults([]);
 
     try {
-        // We only pass the simplified parameters to the findJobs function
+        // Pass all form parameters to the findJobs function
         const searchParams = {
-            keyword: values.keyword || 'all',
-            province: values.province || 'all',
+            keyword: values.keyword === 'all' ? '' : (values.keyword || ''),
+            province: values.province === 'all' ? '' : (values.province || ''),
+            contractType: values.contractType === 'all' ? undefined : values.contractType,
+            experienceLevel: values.experienceLevel === 'all' ? undefined : values.experienceLevel,
         };
+        console.log('Search parameters:', searchParams);
         const result = await findJobs(searchParams);
         setSearchResults(result.jobs);
     } catch (error) {
