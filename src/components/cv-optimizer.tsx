@@ -75,6 +75,11 @@ export function CvOptimizer() {
   const { toast } = useToast();
   const supabase = createSupabaseBrowserClient();
 
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: getInitialFormValues(),
+  });
+
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -353,3 +358,5 @@ export function CvOptimizer() {
     </div>
   );
 }
+
+    
