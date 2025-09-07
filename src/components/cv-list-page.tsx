@@ -9,8 +9,10 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { CvPreview } from './cv-preview';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from './ui/dialog';
+import { createSupabaseBrowserClient } from '@/lib/supabase-client';
 
 type CvListPageProps = {
     cvs: Tables<'cvs'>[];
@@ -18,22 +20,52 @@ type CvListPageProps = {
 
 export function CvListPage({ cvs }: CvListPageProps) {
     const { toast } = useToast();
-    const [isDownloading, setIsDownloading] = useState<number | null>(null);
-    const previewRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const [isDownloading, setIsDownloading] = useState(false);
+    const [selectedCv, setSelectedCv] = useState<Tables<'cvs'> | null>(null);
+    const [workerData, setWorkerData] = useState<{ full_name: string, profile_pic_url: string | null } | null>(null);
+    const previewRef = useRef<HTMLDivElement | null>(null);
+    const supabase = createSupabaseBrowserClient();
 
-    const handleDownloadPdf = async (cv: Tables<'cvs'>, index: number) => {
-        const cvPreviewRef = previewRefs.current[index];
-        if (!cvPreviewRef) return;
+    const fetchWorkerData = async (workerId: string) => {
+        const { data, error } = await supabase
+            .from('workers')
+            .select('full_name, profile_pic_url')
+            .eq('id', workerId)
+            .single();
+
+        if (error) {
+            console.error('Error fetching worker data:', error);
+            return null;
+        }
+        return data;
+    };
+
+    const handleDownloadClick = async (cv: Tables<'cvs'>) => {
+        const fetchedWorkerData = await fetchWorkerData(cv.worker_id);
+        if (fetchedWorkerData) {
+            setWorkerData(fetchedWorkerData);
+            setSelectedCv(cv);
+        } else {
+             toast({
+                variant: "destructive",
+                title: "Error",
+                description: "No se pudo obtener la información del trabajador para este CV."
+            });
+        }
+    };
+
+    const handleDownloadPdf = async () => {
+        if (!previewRef.current || !selectedCv) return;
         
-        setIsDownloading(cv.id);
+        setIsDownloading(true);
         
         try {
-            const canvas = await html2canvas(cvPreviewRef, {
+            const canvas = await html2canvas(previewRef.current, {
                 scale: 3,
                 useCORS: true,
                 backgroundColor: '#ffffff',
-                windowWidth: cvPreviewRef.scrollWidth,
-                windowHeight: cvPreviewRef.scrollHeight,
+                windowWidth: previewRef.current.scrollWidth,
+                windowHeight: previewRef.current.scrollHeight,
             });
 
             const imgData = canvas.toDataURL('image/png', 1.0);
@@ -44,22 +76,22 @@ export function CvListPage({ cvs }: CvListPageProps) {
             const canvasWidth = canvas.width;
             const canvasHeight = canvas.height;
             const ratio = canvasWidth / pdfWidth;
-            const imgHeight = canvasHeight / ratio;
+            let imgHeight = canvasHeight / ratio;
 
             let heightLeft = imgHeight;
             let position = 0;
+            
+            // Si la imagen es más alta que una página, ajústala para que quepa en una página.
+            // Esto evita problemas con CVs largos y paginación.
+            if (imgHeight > pdfHeight) {
+                imgHeight = pdfHeight;
+            }
 
             pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
-            heightLeft -= pdfHeight;
-
-            while (heightLeft > 0) {
-                position = heightLeft - imgHeight;
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight, undefined, 'FAST');
-                heightLeft -= pdfHeight;
-            }
-            const fileName = cv.title?.trim().replace(/\s+/g, '-').toLowerCase() || 'cv-optimizado';
+            
+            const fileName = selectedCv.title?.trim().replace(/\s+/g, '-').toLowerCase() || 'cv-optimizado';
             pdf.save(`${fileName}.pdf`);
+            setSelectedCv(null); // Close dialog on success
         } catch (e) {
             console.error("Error generating PDF:", e);
             toast({
@@ -68,7 +100,7 @@ export function CvListPage({ cvs }: CvListPageProps) {
                 description: "Hubo un problema al intentar descargar el CV. Por favor, intente de nuevo."
             });
         } finally {
-            setIsDownloading(null);
+            setIsDownloading(false);
         }
     };
 
@@ -87,60 +119,61 @@ export function CvListPage({ cvs }: CvListPageProps) {
 
     return (
         <div className="w-full">
-            <Accordion type="single" collapsible className="w-full space-y-4">
-                {cvs.map((cv, index) => {
-                    // Type assertion as the data from Supabase needs to be cast to the expected type
-                    const cvData = {
-                        title: cv.title,
-                        resumen_profesional: cv.professional_summary,
-                        experiencia_laboral: cv.work_experience,
-                        formacion_academica: cv.academic_background,
-                        habilidades: cv.skills,
-                        idiomas: cv.languages,
-                        certificaciones: cv.certifications,
-                        contacto: cv.contact_info
-                    } as any;
+            <div className="space-y-4">
+                {cvs.map((cv) => (
+                     <Card key={cv.id} className="glassmorphism-card overflow-hidden">
+                        <div className="flex flex-row items-center justify-between p-4">
+                            <div>
+                                <p className="font-bold text-lg text-primary-foreground">{cv.title || 'CV sin título'}</p>
+                                <p className="text-sm text-muted-foreground">Generado el {new Date(cv.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <Button
+                                onClick={() => handleDownloadClick(cv)}
+                                variant="outline"
+                                >
+                                <Download className="mr-2 h-4 w-4" />
+                                Descargar
+                            </Button>
+                        </div>
+                    </Card>
+                ))}
+            </div>
 
-                    return (
-                         <Card key={cv.id} className="glassmorphism-card overflow-hidden">
-                            <AccordionItem value={`item-${cv.id}`} className="border-b-0">
-                                <CardHeader className="flex flex-row items-center justify-between p-4">
-                                     <AccordionTrigger className="flex-1 text-left p-0 hover:no-underline">
-                                        <div>
-                                            <p className="font-bold text-lg text-primary-foreground">{cv.title || 'CV sin título'}</p>
-                                            <p className="text-sm text-muted-foreground">Generado el {new Date(cv.created_at).toLocaleDateString()}</p>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <Button
-                                        onClick={() => handleDownloadPdf(cv, index)}
-                                        disabled={isDownloading === cv.id}
-                                        className="ml-4"
-                                        variant="outline"
-                                        >
-                                        {isDownloading === cv.id ? (
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        ) : (
-                                            <Download className="mr-2 h-4 w-4" />
-                                        )}
-                                        {isDownloading === cv.id ? 'Descargando...' : 'Descargar'}
-                                    </Button>
-                                </CardHeader>
-                                <AccordionContent>
-                                    <div className="p-4 bg-gray-200 dark:bg-gray-800 flex justify-center overflow-auto">
-                                        <div ref={el => previewRefs.current[index] = el} className="transform scale-[0.9]">
-                                             <CvPreview 
-                                                cvData={cvData} 
-                                                style={cv.style as any || 'Modern'}
-                                             />
-                                        </div>
-                                    </div>
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Card>
-                    )
-                })}
-            </Accordion>
+            <Dialog open={!!selectedCv} onOpenChange={(isOpen) => !isOpen && setSelectedCv(null)}>
+                <DialogContent className="max-w-4xl w-full h-[90vh] flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle>Vista Previa del CV</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex-grow overflow-auto p-4 bg-gray-200 dark:bg-gray-800 flex justify-center">
+                        {selectedCv && workerData && (
+                            <div ref={previewRef} className="transform scale-[0.85] origin-top">
+                                 <CvPreview 
+                                    cvData={selectedCv as any} 
+                                    style={selectedCv.style as any || 'Modern'}
+                                    fullName={workerData.full_name}
+                                    profilePicUrl={workerData.profile_pic_url}
+                                 />
+                            </div>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">Cancelar</Button>
+                        </DialogClose>
+                        <Button
+                            onClick={handleDownloadPdf}
+                            disabled={isDownloading}
+                        >
+                            {isDownloading ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <Download className="mr-2 h-4 w-4" />
+                            )}
+                            {isDownloading ? 'Descargando...' : 'Confirmar Descarga'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
-

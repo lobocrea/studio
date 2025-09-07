@@ -5,11 +5,23 @@ import type { GenerateOptimizedCvOutput } from "@/ai/flows/generate-optimized-cv
 import { Award, Briefcase, FileText, Globe, GraduationCap, Languages, Linkedin, Mail, MapPin, Phone, Star } from "lucide-react";
 import React from 'react';
 
-type CVStyle = 'Minimalist' | 'Modern' | 'Classic';
+// Adjusting types to accept data from DB or from generation
+type CVData = Partial<GenerateOptimizedCvOutput> & {
+  professional_summary?: string;
+  work_experience?: any[];
+  academic_background?: any[];
+  contact_info?: {
+    email: string;
+    telefono: string;
+    ubicacion: string;
+    linkedin?: string;
+    sitio_web?: string;
+  };
+};
 
 interface CvPreviewProps {
-  cvData: GenerateOptimizedCvOutput;
-  style: CVStyle;
+  cvData: CVData;
+  style: 'Minimalist' | 'Modern' | 'Classic';
   fullName?: string;
   profilePicUrl?: string | null;
 }
@@ -37,7 +49,27 @@ export function CvPreview({ cvData, style, fullName, profilePicUrl }: CvPreviewP
     return <div className="cv-preview-container">Cargando vista previa...</div>;
   }
   
-  const { title, resumen_profesional, experiencia_laboral, formacion_academica, habilidades, idiomas, certificaciones, contacto } = cvData;
+  // Normalize data for preview
+  const { 
+    title, 
+    resumen_profesional, 
+    experiencia_laboral, 
+    formacion_academica, 
+    habilidades, 
+    idiomas, 
+    certificaciones, 
+    contacto 
+  } = {
+    title: cvData.title || '',
+    resumen_profesional: cvData.resumen_profesional || cvData.professional_summary || '',
+    experiencia_laboral: cvData.experiencia_laboral || cvData.work_experience || [],
+    formacion_academica: cvData.formacion_academica || cvData.academic_background || [],
+    habilidades: cvData.habilidades || { tecnicas: [], blandas: [] },
+    idiomas: cvData.idiomas || [],
+    certificaciones: cvData.certificaciones || [],
+    contacto: cvData.contacto || cvData.contact_info || { email: '', telefono: '', ubicacion: '' }
+  };
+
 
   // For modern style, we split content into two columns
   if (style === 'Modern') {
